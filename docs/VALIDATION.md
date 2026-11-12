@@ -41,6 +41,29 @@ The infrastructure checks establish project/config rendering, deployment,
 storage, account lifecycle and access boundaries. They do not establish model
 answer quality or simultaneous capacity.
 
+## Shared model registry — 2026-11-12
+
+The lab now declares `ModelRegistry/summit-connect` separately from the model
+catalog, using native `postgres.generateDeployment: true`. The operator creates
+its database, generated credentials and 5 GiB PVC. The registry and PostgreSQL
+Deployments are ready. Server-side apply is repeatable with no remaining diff.
+
+Real `user1:user1` browser SSO opens **AI hub → Models → Registry**, lists the
+empty registry and opens its Register model form. No synthetic model records
+were added. Impersonated checks for user1/user50 allow `get` on the named registry
+Service/Endpoints and deny Secrets/registry creation. Those checks did not create
+another attendee account. The group policy is `system:authenticated`; metadata
+in this registry is shared, independently of MLflow workspace isolation.
+
+Deletion/recreation of the empty registry was exercised with its operator still
+running. The native finalizer removed its Group and gateway HTTPRoute; owned
+resources, PVC and the Delete-policy RBD PV disappeared. RHOAI 3.5.2 retained the
+cluster-scoped auth-delegator binding. Its saved UID, native labels, role and
+service-account subject were checked before deleting that specific binding.
+The registry was then recreated and its access binding applied. The receipt is
+local/ignored; the exact cleanup is in [teardown](TEARDOWN.md#model-catalog-and-registry-namespace).
+This validates instance teardown, not complete AI uninstall with catalog/registry.
+
 ## Teardown coverage
 
 Participant reset and complete lab/AI removal were exercised. RHOAI 3.5.2 removed

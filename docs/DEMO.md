@@ -57,8 +57,12 @@ sets the dashboard's `disableModelCatalog: false`. The platform access YAML
 binds the catalog read role to `system:authenticated`, so all normal users can
 browse it. Catalog source administration remains separate. The operator provides the
 catalog server, its PostgreSQL cache and registry controller. The catalog cache
-uses `emptyDir` in this release. Individual model registry instances are a
-separate operation.
+uses `emptyDir` in this release. The lab also declares one separate `ModelRegistry/summit-connect`, backed by its
+operator-created PostgreSQL deployment and 5 GiB PVC. The registry-user RoleBinding
+grants `system:authenticated` access to that shared registry. Users can register
+and change the same model metadata there; MLflow's per-namespace workspaces are
+separate. The native demo database is not HA; deleting the registry deletes its
+owned data volume. See the [configuration](INSTALL.md#shared-model-registry).
 
 The restaurant's external endpoint and model name are configured through its
 Helm values and model Secret, as described above.

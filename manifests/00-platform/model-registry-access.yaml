@@ -1,0 +1,15 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: summit-connect-registry-users
+  namespace: rhoai-model-registries
+  labels:
+    event.redhat.com/owner: darmstadt-demo
+subjects:
+  - kind: Group
+    name: system:authenticated
+    apiGroup: rbac.authorization.k8s.io
+roleRef:
+  kind: Role
+  name: registry-user-summit-connect
+  apiGroup: rbac.authorization.k8s.io

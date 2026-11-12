@@ -108,10 +108,48 @@ oc get modelregistries.modelregistry.opendatahub.io -n rhoai-model-registries
 oc get deployments,pvc -n rhoai-model-registries
 ```
 
-This lab creates the catalog server and its PostgreSQL cache, with no registry
-instance or PVC. The catalog PostgreSQL data uses `emptyDir`; catalog sources
-repopulate the cache. If registry instances or persistent data were added later,
-export/clean those deliberately while their operator is available.
+The catalog PostgreSQL cache uses `emptyDir`; catalog sources repopulate it.
+The separate `ModelRegistry/summit-connect` owns a PostgreSQL deployment,
+credential Secrets and a 5 GiB PVC. Export any registry metadata to retain before
+deleting that CR: its PVC is garbage-collected too. Keep the registry operator
+running until its finalizer has completed. Do not delete MLflow storage for this
+registry cleanup; they are separate databases.
+
+Remove only the lab-owned registry while the operator is available:
+
+```bash
+[[ $(oc get modelregistries.modelregistry.opendatahub.io summit-connect -n rhoai-model-registries -o jsonpath='{.metadata.labels.event\.redhat\.com/owner}') == darmstadt-demo ]]
+oc delete -f manifests/00-platform/model-registry-access.yaml --ignore-not-found
+oc delete -f manifests/00-platform/model-registry.yaml --wait=true --timeout=300s
+oc wait --for=delete deployment/summit-connect deployment/summit-connect-postgres pvc/summit-connect-postgres-storage -n rhoai-model-registries --timeout=300s
+```
+
+Check the recorded registry PV's reclaim policy and removal. The tested default
+RBD volume used `Delete`; do not assume that on another storage class. RHOAI
+3.5.2 removes the generated OpenShift Group `summit-connect-users` and its
+cross-namespace HTTPRoute, but leaves `ClusterRoleBinding/summit-connect-auth-delegator`.
+Its namespace-less resource cannot be owned by the namespaced CR. Remove that
+specific leftover using the installation receipt, labels and service-account
+subject, never a broad RBAC name match:
+
+```bash
+if [[ -n $(oc get clusterrolebinding summit-connect-auth-delegator --ignore-not-found -o name) ]]; then
+  expected_uid=$(jq -er .metadata.uid rendered/model-registry/auth-delegator.json)
+  oc get clusterrolebinding summit-connect-auth-delegator -o json | jq -e --arg uid "$expected_uid" '
+    .metadata.uid == $uid and
+    .metadata.labels.app == "summit-connect" and
+    .metadata.labels["modelregistry.opendatahub.io/namespace"] == "rhoai-model-registries" and
+    .roleRef.name == "system:auth-delegator" and
+    .subjects == [{"kind":"ServiceAccount","name":"summit-connect","namespace":"rhoai-model-registries"}]'
+  oc delete clusterrolebinding summit-connect-auth-delegator
+fi
+oc get group summit-connect-users --ignore-not-found -o name
+```
+
+If the receipt is missing or an assertion fails, inspect provenance rather than
+bypassing the checks. No finalizer edits are needed. This registry/PVC/PV cleanup
+and recreation was exercised before publishing the access policy. Other registry
+instances or data need their own deliberate export/cleanup.
 
 Remove the lab-owned access binding during full teardown:
 

@@ -24,7 +24,7 @@ notebook and application-specific instructor preparation.
 ```text
 config/                       # Source/image pins and example site values
 manifests/
-  00-platform/                # AI Subscription, components and model catalog
+  00-platform/                # AI Subscription, components, catalog and shared registry
   10-images/                  # Native Git BuildConfigs and ImageStreams
   20-mlflow/                  # PostgreSQL, S3 storage and MLflow custom resource
   30-participant/project/     # Per-person namespace, quota, limits and grants

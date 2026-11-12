@@ -1,0 +1,19 @@
+apiVersion: modelregistry.opendatahub.io/v1beta1
+kind: ModelRegistry
+metadata:
+  name: summit-connect
+  namespace: rhoai-model-registries
+  annotations:
+    openshift.io/display-name: Summit Connect lab
+    openshift.io/description: Shared model metadata registry for authenticated lab users
+  labels:
+    event.redhat.com/owner: darmstadt-demo
+spec:
+  postgres:
+    generateDeployment: true
+  rest:
+    port: 8080
+  grpc:
+    port: 9090
+  kubeRBACProxy:
+    serviceRoute: enabled

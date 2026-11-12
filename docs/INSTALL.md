@@ -80,6 +80,13 @@ oc rollout status deployment/model-catalog -n rhoai-model-registries --timeout=6
 oc rollout status deployment/model-catalog-postgres -n rhoai-model-registries --timeout=600s
 oc apply --server-side --field-manager=darmstadt-demo -f manifests/00-platform/model-catalog-access.yaml
 oc get namespace rhoai-model-registries -o json > rendered/model-catalog-namespace.json
+# Separate user model registry; the catalog above is only for discovery.
+oc apply --server-side --field-manager=darmstadt-demo -f manifests/00-platform/model-registry.yaml
+oc wait modelregistries.modelregistry.opendatahub.io/summit-connect -n rhoai-model-registries --for=condition=Available --timeout=600s
+oc get role registry-user-summit-connect -n rhoai-model-registries -o name
+oc apply --server-side --field-manager=darmstadt-demo -f manifests/00-platform/model-registry-access.yaml
+mkdir -p rendered/model-registry
+oc get clusterrolebinding summit-connect-auth-delegator -o json > rendered/model-registry/auth-delegator.json
 ```
 
 A preinstalled bootstrap operator with no `DataScienceCluster` or AI user
@@ -114,8 +121,8 @@ Managed`, with native registry namespace `rhoai-model-registries`. The separate
 configuration. Open **AI hub → Models → Catalog** to browse the configured sources.
 The operator creates the catalog server and its PostgreSQL cache in
 `rhoai-model-registries`; this version uses `emptyDir` for that cache, with no
-PVC. Creating a model registry instance and its persistent database is a separate
-operation. Reload an already-open dashboard after enabling the component.
+PVC. The separate `ModelRegistry/summit-connect` below owns its own database
+and persistent volume. Reload an already-open dashboard after enabling the component.
 
 `model-catalog-access.yaml` explicitly binds the operator's namespace-local
 `Role/model-catalog` to `system:authenticated`. Every normal authenticated user
@@ -138,6 +145,45 @@ oc auth can-i get secrets -n rhoai-model-registries \
 
 References: [enable the registry/catalog component](https://docs.redhat.com/en/documentation/red_hat_openshift_ai_self-managed/3.5/html/managing_model_registries/enabling-the-model-registry-component_managing-model-registries),
 [dashboard catalog setting](https://docs.redhat.com/en/documentation/red_hat_openshift_ai_self-managed/3.5/html/managing_resources/customizing-the-dashboard).
+
+### Shared model registry
+
+`model-registry.yaml` declares `ModelRegistry/summit-connect` in
+`rhoai-model-registries`. `postgres.generateDeployment: true` selects the native
+nonproduction database: the registry operator creates PostgreSQL, generated
+credential Secrets and a 5 GiB PVC using the default storage class. No database
+password or extra bootstrap script is needed. This is the product's demo database,
+not an HA database service. Deleting the registry also deletes its owned PVC.
+
+Open **AI hub → Models → Registry**. It is separate from **Catalog**, which lists
+provided model sources, and from MLflow, which stores workshop traces/prompts.
+The restaurant and notebook continue using their configured external model API;
+creating this registry does not import, proxy or deploy that endpoint.
+
+`model-registry-access.yaml` binds the operator-created
+`Role/registry-user-summit-connect` to `system:authenticated`. All authenticated
+users can use the shared registry, including registering/editing model metadata.
+Records here are shared; this is not a per-participant registry. MLflow workspace
+permissions remain namespace based. The role allows `get` on the named registry
+Service/Endpoints for its authentication proxy; it does not grant database Secret
+access or registry administration. The singular role spelling above is verified
+on RHOAI 3.5.2; inspect the generated role when upgrading the operator.
+
+```bash
+oc auth can-i get services/summit-connect -n rhoai-model-registries \
+  --as=user50 --as-group=system:authenticated
+# Expected: yes; this does not create a user50 account.
+oc auth can-i get secrets -n rhoai-model-registries \
+  --as=user50 --as-group=system:authenticated
+# Expected: no.
+```
+
+Use the fully qualified `modelregistries.modelregistry.opendatahub.io` name in
+commands: this cluster also has a platform component resource called ModelRegistry.
+The saved auth-binding receipt supports the scoped cleanup in
+[teardown](TEARDOWN.md#model-catalog-and-registry-namespace).
+References: [native registry database](https://docs.redhat.com/en/documentation/red_hat_openshift_ai_self-managed/3.5/html/managing_model_registries/creating-a-model-registry_managing-model-registries),
+[registry access](https://docs.redhat.com/en/documentation/red_hat_openshift_ai_self-managed/3.5/html/managing_model_registries/managing-model-registry-permissions_managing-model-registries).
 
 ## 3. Build the application and prepared workbench — once
 

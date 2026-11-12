@@ -21,11 +21,7 @@ functional checks. This is evidence for the pilot, not a 50-user capacity result
 | Account lifecycle | The range command `1 1` created a real account; delete/recreate and `userN:userN` credential enforcement passed |
 | Participant reset | Namespace, notebook PVC/PV and external pull grant removed; reinstall retained shared MLflow history |
 | SSO and workbench | Real participant opened MLflow/Jupyter; native connection/auth injection and gateway TLS passed; notebook dependencies were ready |
-| Prompt comparison | Five baseline and five candidate restaurant turns; two stored comparison runs/artifacts with prompt versions and app trace links |
-| Prompt lifecycle / feedback | UI create, activate and restore passed; prompt lineage, session metadata and `user_rating` persisted |
 | Workspace isolation | Human account could read its workspace; explicit foreign experiment read returned `403 PERMISSION_DENIED` |
-| Policy permissions | Impersonated participant checks allowed own ConfigMap editing and NeMo restart |
-| Guardrails | Warmed menu request allowed; off-topic request blocked before agent/tools without fail-open; empty policy restored and warmed |
 | Model catalog | Real participant browsed cards/filters; impersonated user1/user50 could read catalog Service/Endpoints, not namespace Secrets or catalog source configuration |
 | Cluster move | Removed the old lab/AI installation, preserved unrelated applications/storage/identities and recreated the pilot on another cluster |
 
@@ -39,15 +35,11 @@ syntax and local Markdown links. The complete user1 preview rendered with an
 unreachable test API address; no cluster access was needed. `oc` still needs a
 configured context for its local ConfigMap generation.
 
-Application checks also passed: 11 chart regression checks, seven assistant
-regressions and 50 native project/chart renders. Their scope is documented in
-the [application validation notes](https://github.com/Kounex/tableschnappi/blob/main/docs/VALIDATION.md).
-
-The immutable workbench base has an existing Ray/codeflare dependency conflict.
-Adding lab packages introduced no new conflicts; the Dockerfile compares checks
-before and after installation. Those distributed-computing features are outside
-this lab. Diagnostic response-format checks are observations, not correctness
-scores or guaranteed model behavior.
+Application behavior, agent dependencies and image compatibility checks are
+recorded in the [application validation notes](https://github.com/Kounex/tableschnappi/blob/main/docs/VALIDATION.md).
+The infrastructure checks establish project/config rendering, deployment,
+storage, account lifecycle and access boundaries. They do not establish model
+answer quality or simultaneous capacity.
 
 ## Teardown coverage
 
@@ -57,6 +49,12 @@ a controller before finalizing its LLM configuration objects. The checked-in
 native controller, which finalized them normally. No finalizers were stripped.
 Residual resources were audited against the original cluster inventory.
 
+The browser-first workshop revision and independent agent notebook are newer
+than the earlier live rehearsal. They need a rebuilt workbench image, refreshed
+source pin and a new pilot rehearsal; source pins and native Git BuildConfigs currently describe the
+previous deployed revision. Keep those pins aligned when rolling out the new image. Application-specific test results and teaching
+flow belong to [the application repository](https://github.com/Kounex/tableschnappi/blob/main/docs/VALIDATION.md).
+
 The model catalog was enabled after that rehearsal. Catalog namespace provenance
 and cleanup are documented in [teardown](TEARDOWN.md); full teardown with the
 catalog enabled has not yet been exercised.
@@ -64,8 +62,9 @@ catalog enabled has not yet been exercised.
 ## Remaining gates
 
 1. Deploy the full roster and rehearse simultaneous workbench/model/guardrail
-   load. Two five-case batches per attendee mean at least 500 restaurant turns,
-   plus tool and guard model calls. Check CPU, memory and provider quota.
+   load. Use the application workshop's current questions and
+   agent experiments to size model and guard calls; one turn can make multiple
+   provider requests. Check CPU, memory and provider quota.
 2. Rehearse as a second real identity, including cross-workspace denial.
 3. Exercise installation on a target without a bootstrapped AI operator. The
    replay began with an operator-only installation and no AI workloads.

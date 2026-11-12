@@ -1,7 +1,8 @@
 # How the restaurant lab works
 
-The one-hour exercise is **chat → inspect MLflow → change a prompt or guardrail
-→ repeat and compare**. Each participant `userN` owns project
+This document explains the deployed infrastructure and connections. For the
+attendee exercises and schedule, use [the application workshop](https://github.com/Kounex/tableschnappi/blob/main/workshop/README.md).
+Each participant `userN` owns project
 `tableschnappi-userN`. Demo login credentials match: for example,
 username `user1`, password `user1`.
 
@@ -22,7 +23,8 @@ flowchart LR
   A --> G[Local NeMo guardrails]
   A --> L[External model API]
   G --> L
-  W[Comparison notebook] -->|test questions| B
+  W[Workbench agent] --> L
+  W -->|read-only tools| T
   A -->|own identity/workspace| M[Shared MLflow]
   W -->|own identity/workspace| M
 ```
@@ -35,8 +37,10 @@ and resets when its backend restarts.
 
 `config/site-values.yaml` supplies endpoint/model values to the pinned Helm
 chart. The application and NeMo use the namespace's `Secret/endpoint-api-key-1`,
-key `api_key`, and call the external model API directly. The comparison notebook
-calls the restaurant API, not the model directly.
+key `api_key`, and call the external model API directly. The final agent
+notebook uses the same endpoint/model Secret and read-only MCP
+service directly. It runs a separate agent; the restaurant's NeMo shield is not
+in that notebook's model path.
 
 The unused AI asset registration is disabled in the lab. There is no separate
 model discovery entry, local inference deployment or MaaS/Kuadrant gateway in
@@ -75,63 +79,21 @@ the native controller. OpenShift AI injects MLflow connection/authentication con
 annotation does not instrument arbitrary code. Workbench code still needs the
 MLflow SDK, autologging or explicit traces.
 
-## What the application records
+## Workshop ownership
 
-The Python assistant has its own MLflow instrumentation:
+The application repository owns the
+[attendee walkthrough](https://github.com/Kounex/tableschnappi/blob/main/workshop/README.md),
+[agent notebook](https://github.com/Kounex/tableschnappi/blob/main/workshop/agent-playground.ipynb)
+and [instructor guide](https://github.com/Kounex/tableschnappi/blob/main/docs/INSTRUCTOR.md).
+This runbook prepares their projects, images, configuration and permissions.
+It does not maintain a second copy of the schedule or exercises.
 
-| Code | Records |
-|---|---|
-| `@mlflow.trace` around `run_assistant()` | The entire chat turn |
-| `mlflow.langchain.autolog()` | Nested graph nodes and supported model calls |
-| Manual `TOOL` span around MCP HTTP calls | Tool arguments, results and duration |
-
-The model selects tool calls; the assistant executes them through the local MCP
-service, which reads/updates that project's restaurant backend. Guard spans
-capture the guard's result and duration. Backend/MCP internals and NeMo's own
-internal model request are not separately instrumented.
-
-## Participant flow
-
-The one-hour schedule, question cards and learning goals are in
-[LAB.md](LAB.md). The following flow uses the application chart's workshop profile.
-
-1. Sign in as `userN`; open the restaurant, matching MLflow workspace and workbench.
-2. Predict tool use for the three starter questions, chat, and inspect the model/tool spans in `restaurant-chatbot-traces`.
-3. Rate an answer and find its persisted `user_rating` feedback on the trace.
-4. Run the guided notebook's baseline batch **before** changing the prompt.
-5. In MLflow, create/compare a `restaurant-assistant-prompt` version and move `active` to it. This text is the restaurant agent's system prompt. Its next turn uses the selected version; code-enforced reservation checks remain in place.
-6. Repeat a chat, inspect its prompt version, then run the same five-case candidate batch. The notebook sends requests to the restaurant API; the LangGraph agent continues to execute in the restaurant stack.
-7. Compare answers and traces, then restore the baseline prompt. Complete the guardrails exercise: observe an allowed/off-topic pair, edit the NeMo policy, restart/warm it, and repeat both requests while holding the prompt fixed. Inspect the changed guard/agent trace paths.
-8. Restore the baseline prompt/policy and start a New chat. Keep the MLflow evidence.
-
-The guided `comparison.ipynb` and concise attendee guides live in
-[the application workshop](https://github.com/Kounex/tableschnappi/tree/main/workshop).
-The pinned workshop profile loads `@active`; publishing a new version alone
-does not activate it.
-
-`01-own-agent-mcp.ipynb` runs an independent model/MCP loop inside the workbench,
-logging to `own-agent-mcp-example`. Editing that example does not automatically
-change the restaurant assistant. It and the additional pipeline/RAG examples
-are outside the core lab.
-
-## Guardrail warmup
-
-The lab profile connects shields and starts NeMo with an empty input policy.
-Warm/check that baseline from the repository root:
-
-```bash
-bash scripts/warm-guardrails.sh 1 1
-```
-
-After applying the workshop's blocking policy and restarting NeMo:
-
-```bash
-bash scripts/warm-guardrails.sh --expect-blocked 1 1
-```
-
-Restore the original empty policy/restart, then warm without `--expect-blocked`.
-The Job sends allowed/off-topic requests to NeMo, with a longer cold-start timeout.
-A real restaurant request and trace inspection still verify the entire path.
+The workbench's independent agent logs to `restaurant-agent-playground`;
+restaurant traces remain in `restaurant-chatbot-traces`. Both use the same
+namespace-authorized MLflow workspace. The pinned source archive and prepared
+workbench image must match the desired workshop revision. Existing PVC content
+is preserved on upgrades; use the explicit participant reset when a clean source
+checkout is intended.
 
 ## Limitations
 

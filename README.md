@@ -3,11 +3,11 @@
 Prepare OpenShift AI for a one-hour, hands-on MLflow workshop. Each participant
 (`user1`–`user50`) gets a restaurant application, Jupyter workbench and MLflow
 workspace. A shared, operator-managed MLflow server records traces, prompt
-versions, feedback and comparison runs.
+versions and feedback.
 
-Attendees chat with the restaurant, inspect its traces, change the system prompt,
-and compare results before adding a guardrail. The application calls an external
-OpenAI-compatible model API; this repository prepares the infrastructure.
+The application calls an external OpenAI-compatible model API. This repository
+owns infrastructure only. The application repository owns the attendee guides,
+notebook and application-specific instructor preparation.
 
 **Start with [the installation runbook](docs/INSTALL.md)** and a single participant.
 
@@ -15,7 +15,7 @@ OpenAI-compatible model API; this repository prepares the infrastructure.
 |---|---|
 | [Installation](docs/INSTALL.md) | Prerequisites, platform YAML, builds, MLflow, accounts and participant batches |
 | [Architecture](docs/DEMO.md) | What runs where; MLflow isolation, instrumentation and model configuration |
-| [Lab flow](docs/LAB.md) | The one-hour schedule and instructor preparation |
+| [Attendee workshop](https://github.com/Kounex/tableschnappi/blob/main/workshop/README.md) | Restaurant, prompts, guardrails and final agent notebook (application repo) |
 | [Reset and teardown](docs/TEARDOWN.md) | Participant reset, data removal and lab-owned AI uninstall |
 | [Validation](docs/VALIDATION.md) | Tested versions, evidence and remaining checks |
 
@@ -69,7 +69,7 @@ remain [validation gates](docs/VALIDATION.md).
 The application, Helm chart and attendee exercises live in
 [Kounex/tableschnappi](https://github.com/Kounex/tableschnappi). Open
 [the workshop overview](https://github.com/Kounex/tableschnappi/blob/main/workshop/README.md)
-for the participant guides and comparison notebook. The
+for the participant guides and agent playground notebook. The
 [implementation explanation](https://github.com/Kounex/tableschnappi/blob/main/docs/IMPLEMENTATION.md)
 covers the application/chart changes and their purpose.
 

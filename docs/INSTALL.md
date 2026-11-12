@@ -293,26 +293,24 @@ why accounts use its [Admin REST API](https://www.keycloak.org/docs-api/latest/r
 rather than another `oc apply`. On a different identity provider, provision the
 same participant names through that provider instead; skip this optional step.
 
-## 6. Check, use and remove the lab
+## 6. Verify readiness and hand over to the workshop
 
-Open the assigned restaurant, then OpenShift AI project `tableschnappi-userN`
-and its `userN` workbench. In Jupyter open `tableschnappi/workshop/README.md` and
-follow guides 01–05. `comparison.ipynb` calls the real restaurant API. MLflow chat
-traces are in `restaurant-chatbot-traces`; comparison runs are in
-`restaurant-workshop-comparison` in the same participant workspace.
+Use the application repository's
+[instructor preparation](https://github.com/Kounex/tableschnappi/blob/main/docs/INSTRUCTOR.md)
+and [attendee workshop](https://github.com/Kounex/tableschnappi/blob/main/workshop/README.md)
+for the rehearsal, schedule and exercises. This infrastructure repository does
+not duplicate those steps. Prepare each attendee's restaurant, MLflow, OpenShift
+AI and Console links. Verify project access and workbench readiness before the event.
 
-Follow the [demo explanation](DEMO.md) and [one-hour lab flow](LAB.md).
-Guardrails are a required exercise. Shields start connected with an empty input
-policy. After enabling the guide's policy and restarting NeMo, warm and verify it:
+The chart starts NeMo with `rails.input.flows: []` and keeps assistant shields
+connected. Warm the empty-policy baseline after deployment using
+`scripts/warm-guardrails.sh START END`. During instructor checks after a blocking
+policy is enabled, `--expect-blocked` checks the allowed/blocked pair. After
+restoring the empty policy/restarting NeMo, warm without that flag. The application
+instructor guide owns policy/reset instructions and the attendee ConfigMap edits.
 
-```bash
-bash scripts/warm-guardrails.sh --expect-blocked 1 1
-```
-
-Restore the saved empty policy/restart, then warm again without `--expect-blocked`.
-The test must cover allowed and blocked behavior and the actual restaurant traces.
-For exercise reset, restore the active prompt alias and NeMo policy, retaining
-MLflow evidence. For participant deletion/full removal, use [TEARDOWN.md](TEARDOWN.md).
+For participant deletion or full environment removal, use [TEARDOWN.md](TEARDOWN.md).
+Check [validation coverage and remaining gates](VALIDATION.md) before scaling up.
 
 ## What belongs in YAML, and what still needs an operation?
 

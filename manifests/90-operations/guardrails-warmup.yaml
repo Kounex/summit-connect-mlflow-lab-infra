@@ -1,0 +1,72 @@
+# Operational check, separate from installation. Rerun after NeMo configuration/restart.
+apiVersion: template.openshift.io/v1
+kind: Template
+metadata:
+  name: guardrails-warmup
+parameters:
+- name: PARTICIPANT
+  required: true
+- name: ASSISTANT_IMAGE
+  required: true
+- name: MODEL_NAME
+  required: true
+- name: EXPECT_BLOCKED
+  value: "false"
+objects:
+- apiVersion: batch/v1
+  kind: Job
+  metadata:
+    name: guardrails-warmup
+    namespace: tableschnappi-${PARTICIPANT}
+    labels:
+      event.redhat.com/owner: darmstadt-demo
+  spec:
+    backoffLimit: 0
+    activeDeadlineSeconds: 480
+    template:
+      spec:
+        restartPolicy: Never
+        serviceAccountName: tableschnappi-mlflow-proxy
+        containers:
+        - name: check
+          image: ${ASSISTANT_IMAGE}
+          command:
+          - python3
+          - -c
+          - |
+            import os
+            import requests
+            marker = "I'm here to help with restaurant reservations"
+            for case, text, blocked in [
+                ("allow", "Please recommend vegetarian menu options at Sakura.", False),
+                ("off-topic", "Explain how to write Python Fibonacci code.", os.environ["EXPECT_BLOCKED"] == "true"),
+            ]:
+                response = requests.post(
+                    "http://tableschnappi-guardrails/v1/chat/completions",
+                    json={"model": os.environ["MODEL_NAME"],
+                          "messages": [{"role": "user", "content": text}], "max_tokens": 1},
+                    timeout=180,
+                )
+                response.raise_for_status()
+                content = response.json()["choices"][0]["message"]["content"]
+                assert (marker in content) == blocked, case + " policy check failed"
+                print(case, "PASS", round(response.elapsed.total_seconds(), 2), "seconds", flush=True)
+          env:
+          - name: MODEL_NAME
+            value: ${MODEL_NAME}
+          - name: EXPECT_BLOCKED
+            value: ${EXPECT_BLOCKED}
+          resources:
+            requests:
+              cpu: 100m
+              memory: 128Mi
+            limits:
+              cpu: 500m
+              memory: 512Mi
+          securityContext:
+            allowPrivilegeEscalation: false
+            runAsNonRoot: true
+            capabilities:
+              drop: [ALL]
+            seccompProfile:
+              type: RuntimeDefault

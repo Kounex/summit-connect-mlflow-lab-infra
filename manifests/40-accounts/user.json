@@ -1,0 +1,16 @@
+{
+  "username": "${PARTICIPANT}",
+  "enabled": true,
+  "firstName": "${PARTICIPANT}",
+  "lastName": "Restaurant lab",
+  "email": "${PARTICIPANT}@restaurant-lab.invalid",
+  "emailVerified": true,
+  "requiredActions": [],
+  "credentials": [
+    {
+      "type": "password",
+      "value": "${PARTICIPANT}",
+      "temporary": false
+    }
+  ]
+}

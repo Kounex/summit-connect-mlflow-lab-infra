@@ -1,0 +1,38 @@
+apiVersion: template.openshift.io/v1
+kind: Template
+metadata:
+  name: mlflow
+  annotations:
+    description: Operator-managed shared MLflow. BUCKET_NAME comes from the Bound OBC, never a hardcoded generated
+      bucket.
+parameters:
+- name: BUCKET_NAME
+  description: Bucket name
+  required: true
+objects:
+- apiVersion: mlflow.opendatahub.io/v1
+  kind: MLflow
+  metadata:
+    labels:
+      event.redhat.com/owner: darmstadt-demo
+    name: mlflow
+  spec:
+    artifactsDestination: s3://${BUCKET_NAME}/artifacts
+    backendStoreUriFrom:
+      key: backend-store-uri
+      name: darmstadt-mlflow-db
+    caBundleConfigMap:
+      name: openshift-service-ca.crt
+    envFrom:
+    - secretRef:
+        name: darmstadt-mlflow-s3
+    replicas: 1
+    resources:
+      limits:
+        cpu: '2'
+        memory: 4Gi
+      requests:
+        cpu: 500m
+        memory: 1Gi
+    serveArtifacts: true
+    workers: 4

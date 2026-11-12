@@ -1,0 +1,26 @@
+apiVersion: template.openshift.io/v1
+kind: Template
+metadata:
+  name: participant-limits
+parameters:
+- name: PARTICIPANT
+  description: OpenShift identity user1 through user50
+  required: true
+objects:
+- apiVersion: v1
+  kind: LimitRange
+  metadata:
+    name: participant-defaults
+    namespace: tableschnappi-${PARTICIPANT}
+    labels:
+      event.redhat.com/owner: darmstadt-demo
+      opendatahub.io/dashboard: 'true'
+  spec:
+    limits:
+    - type: Container
+      defaultRequest:
+        cpu: 100m
+        memory: 256Mi
+      default:
+        cpu: '1'
+        memory: 2Gi

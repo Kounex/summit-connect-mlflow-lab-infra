@@ -1,0 +1,10 @@
+# Nonsecret site inputs. Copy to ignored site-values.yaml.
+rhoai:
+  appsDomain: apps.example.com
+  mlflowUri: https://rh-ai.apps.example.com/mlflow
+  mlflowUiUrl: https://rh-ai.apps.example.com/mlflow
+model:
+  endpoint: https://inference.example.com
+  name: qwen36-35b-a3b
+  existingSecret: endpoint-api-key-1
+  secretKey: api_key

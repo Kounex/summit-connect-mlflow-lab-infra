@@ -1,0 +1,32 @@
+apiVersion: template.openshift.io/v1
+kind: Template
+metadata:
+  name: participant-network-policy
+parameters:
+- name: PARTICIPANT
+  description: OpenShift identity user1 through user50
+  required: true
+objects:
+- apiVersion: networking.k8s.io/v1
+  kind: NetworkPolicy
+  metadata:
+    name: participant-ingress
+    namespace: tableschnappi-${PARTICIPANT}
+    labels:
+      event.redhat.com/owner: darmstadt-demo
+      opendatahub.io/dashboard: 'true'
+  spec:
+    podSelector: {}
+    policyTypes:
+    - Ingress
+    ingress:
+    - from:
+      - podSelector: {}
+    - from:
+      - namespaceSelector:
+          matchLabels:
+            network.openshift.io/policy-group: ingress
+    - from:
+      - namespaceSelector:
+          matchLabels:
+            kubernetes.io/metadata.name: redhat-ods-applications

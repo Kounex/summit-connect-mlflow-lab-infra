@@ -1,0 +1,207 @@
+apiVersion: image.openshift.io/v1
+kind: ImageStream
+metadata:
+  name: tableschnappi-frontend
+  namespace: tableschnappi-demo
+  labels:
+    event.redhat.com/owner: darmstadt-demo
+---
+apiVersion: build.openshift.io/v1
+kind: BuildConfig
+metadata:
+  name: tableschnappi-frontend
+  namespace: tableschnappi-demo
+  labels:
+    event.redhat.com/owner: darmstadt-demo
+  annotations:
+    event.redhat.com/source-commit: 7e8f6436c1d1ca4f9dbdcd4ae1dedd32146230c9
+spec:
+  runPolicy: Serial
+  source:
+    type: Git
+    git:
+      uri: https://github.com/Kounex/tableschnappi.git
+      ref: 7e8f6436c1d1ca4f9dbdcd4ae1dedd32146230c9
+  strategy:
+    type: Docker
+    dockerStrategy:
+      dockerfilePath: packages/frontend/Dockerfile
+  output:
+    to:
+      kind: ImageStreamTag
+      name: tableschnappi-frontend:7e8f643
+  resources:
+    requests:
+      cpu: 500m
+      memory: 1Gi
+    limits:
+      cpu: '2'
+      memory: 3Gi
+  successfulBuildsHistoryLimit: 1
+  failedBuildsHistoryLimit: 2
+---
+apiVersion: image.openshift.io/v1
+kind: ImageStream
+metadata:
+  name: tableschnappi-backend
+  namespace: tableschnappi-demo
+  labels:
+    event.redhat.com/owner: darmstadt-demo
+---
+apiVersion: build.openshift.io/v1
+kind: BuildConfig
+metadata:
+  name: tableschnappi-backend
+  namespace: tableschnappi-demo
+  labels:
+    event.redhat.com/owner: darmstadt-demo
+  annotations:
+    event.redhat.com/source-commit: 7e8f6436c1d1ca4f9dbdcd4ae1dedd32146230c9
+spec:
+  runPolicy: Serial
+  source:
+    type: Git
+    git:
+      uri: https://github.com/Kounex/tableschnappi.git
+      ref: 7e8f6436c1d1ca4f9dbdcd4ae1dedd32146230c9
+  strategy:
+    type: Docker
+    dockerStrategy:
+      dockerfilePath: packages/backend/Dockerfile
+  output:
+    to:
+      kind: ImageStreamTag
+      name: tableschnappi-backend:7e8f643
+  resources:
+    requests:
+      cpu: 500m
+      memory: 1Gi
+    limits:
+      cpu: '2'
+      memory: 3Gi
+  successfulBuildsHistoryLimit: 1
+  failedBuildsHistoryLimit: 2
+---
+apiVersion: image.openshift.io/v1
+kind: ImageStream
+metadata:
+  name: tableschnappi-mcp
+  namespace: tableschnappi-demo
+  labels:
+    event.redhat.com/owner: darmstadt-demo
+---
+apiVersion: build.openshift.io/v1
+kind: BuildConfig
+metadata:
+  name: tableschnappi-mcp
+  namespace: tableschnappi-demo
+  labels:
+    event.redhat.com/owner: darmstadt-demo
+  annotations:
+    event.redhat.com/source-commit: 7e8f6436c1d1ca4f9dbdcd4ae1dedd32146230c9
+spec:
+  runPolicy: Serial
+  source:
+    type: Git
+    git:
+      uri: https://github.com/Kounex/tableschnappi.git
+      ref: 7e8f6436c1d1ca4f9dbdcd4ae1dedd32146230c9
+  strategy:
+    type: Docker
+    dockerStrategy:
+      dockerfilePath: packages/mcp-server/Dockerfile
+  output:
+    to:
+      kind: ImageStreamTag
+      name: tableschnappi-mcp:7e8f643
+  resources:
+    requests:
+      cpu: 500m
+      memory: 1Gi
+    limits:
+      cpu: '2'
+      memory: 3Gi
+  successfulBuildsHistoryLimit: 1
+  failedBuildsHistoryLimit: 2
+---
+apiVersion: image.openshift.io/v1
+kind: ImageStream
+metadata:
+  name: tableschnappi-mlflow-proxy
+  namespace: tableschnappi-demo
+  labels:
+    event.redhat.com/owner: darmstadt-demo
+---
+apiVersion: build.openshift.io/v1
+kind: BuildConfig
+metadata:
+  name: tableschnappi-mlflow-proxy
+  namespace: tableschnappi-demo
+  labels:
+    event.redhat.com/owner: darmstadt-demo
+  annotations:
+    event.redhat.com/source-commit: 7e8f6436c1d1ca4f9dbdcd4ae1dedd32146230c9
+spec:
+  runPolicy: Serial
+  source:
+    type: Git
+    contextDir: packages/mlflow-proxy
+    git:
+      uri: https://github.com/Kounex/tableschnappi.git
+      ref: 7e8f6436c1d1ca4f9dbdcd4ae1dedd32146230c9
+  strategy:
+    type: Docker
+    dockerStrategy:
+      dockerfilePath: Dockerfile
+  output:
+    to:
+      kind: ImageStreamTag
+      name: tableschnappi-mlflow-proxy:7e8f643
+  resources:
+    requests:
+      cpu: 500m
+      memory: 1Gi
+    limits:
+      cpu: '2'
+      memory: 3Gi
+  successfulBuildsHistoryLimit: 1
+  failedBuildsHistoryLimit: 2
+---
+apiVersion: image.openshift.io/v1
+kind: ImageStream
+metadata:
+  name: tableschnappi-workbench
+  namespace: tableschnappi-demo
+  labels:
+    event.redhat.com/owner: darmstadt-demo
+---
+apiVersion: build.openshift.io/v1
+kind: BuildConfig
+metadata:
+  name: tableschnappi-workbench
+  namespace: tableschnappi-demo
+  labels:
+    event.redhat.com/owner: darmstadt-demo
+  annotations:
+    event.redhat.com/source-commit: 7e8f6436c1d1ca4f9dbdcd4ae1dedd32146230c9
+spec:
+  runPolicy: Serial
+  source:
+    type: Git
+    git:
+      uri: https://github.com/Kounex/tableschnappi.git
+      ref: 7e8f6436c1d1ca4f9dbdcd4ae1dedd32146230c9
+    contextDir: workshop/helpers
+  strategy:
+    type: Docker
+    dockerStrategy:
+      dockerfilePath: Dockerfile.workbench
+  output:
+    to:
+      kind: ImageStreamTag
+      name: tableschnappi-workbench:7e8f643
+  resources:
+    requests: {cpu: 500m, memory: 1Gi}
+    limits: {cpu: '2', memory: 3Gi}
+  successfulBuildsHistoryLimit: 1
+  failedBuildsHistoryLimit: 2

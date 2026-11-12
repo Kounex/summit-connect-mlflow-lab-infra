@@ -1,0 +1,16 @@
+apiVersion: template.openshift.io/v1
+kind: Template
+metadata:
+  name: participant-namespace
+parameters:
+- name: PARTICIPANT
+  description: OpenShift identity user1 through user50
+  required: true
+objects:
+- apiVersion: v1
+  kind: Namespace
+  metadata:
+    name: tableschnappi-${PARTICIPANT}
+    labels:
+      event.redhat.com/owner: darmstadt-demo
+      opendatahub.io/dashboard: 'true'

@@ -1,0 +1,177 @@
+apiVersion: template.openshift.io/v1
+kind: Template
+metadata:
+  name: storage
+  annotations:
+    description: Lab-owned PostgreSQL and ODF bucket claim. Not a database operator or HA service. Requires existing
+      ODF.
+parameters:
+- name: LAB_NAMESPACE
+  description: Fixed infrastructure namespace; parameterized to preserve it during native Template processing
+  value: tableschnappi-demo
+  required: true
+- name: POSTGRES_IMAGE
+  description: Postgres image
+  required: true
+objects:
+- apiVersion: apps/v1
+  kind: Deployment
+  metadata:
+    labels:
+      event.redhat.com/owner: darmstadt-demo
+    name: darmstadt-postgresql
+    namespace: ${LAB_NAMESPACE}
+  spec:
+    replicas: 1
+    selector:
+      matchLabels:
+        app: darmstadt-postgresql
+    strategy:
+      type: Recreate
+    template:
+      metadata:
+        labels:
+          app: darmstadt-postgresql
+      spec:
+        containers:
+        - env:
+          - name: POSTGRESQL_USER
+            value: mlflow
+          - name: POSTGRESQL_DATABASE
+            value: mlflow
+          - name: POSTGRESQL_PASSWORD
+            valueFrom:
+              secretKeyRef:
+                key: password
+                name: darmstadt-mlflow-db
+          image: ${POSTGRES_IMAGE}
+          imagePullPolicy: Always
+          livenessProbe:
+            exec:
+              command:
+              - /usr/bin/pg_isready
+              - -U
+              - mlflow
+              - -d
+              - mlflow
+            initialDelaySeconds: 60
+          name: postgresql
+          ports:
+          - containerPort: 5432
+            protocol: TCP
+          readinessProbe:
+            exec:
+              command:
+              - /usr/bin/pg_isready
+              - -U
+              - mlflow
+              - -d
+              - mlflow
+            initialDelaySeconds: 10
+          resources:
+            limits:
+              cpu: '1'
+              memory: 1Gi
+            requests:
+              cpu: 100m
+              memory: 256Mi
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+              - ALL
+            runAsNonRoot: true
+            seccompProfile:
+              type: RuntimeDefault
+          volumeMounts:
+          - mountPath: /var/lib/pgsql/data
+            name: data
+          - mountPath: /tls
+            name: tls
+            readOnly: true
+          - mountPath: /opt/app-root/src/postgresql-cfg
+            name: config
+            readOnly: true
+        volumes:
+        - name: data
+          persistentVolumeClaim:
+            claimName: darmstadt-postgresql
+        - name: tls
+          secret:
+            defaultMode: 416
+            secretName: darmstadt-postgresql-tls
+        - configMap:
+            name: darmstadt-postgresql-config
+          name: config
+- apiVersion: v1
+  kind: Service
+  metadata:
+    annotations:
+      service.beta.openshift.io/serving-cert-secret-name: darmstadt-postgresql-tls
+    labels:
+      event.redhat.com/owner: darmstadt-demo
+    name: darmstadt-postgresql
+    namespace: ${LAB_NAMESPACE}
+  spec:
+    ports:
+    - port: 5432
+      protocol: TCP
+      targetPort: 5432
+    selector:
+      app: darmstadt-postgresql
+- apiVersion: v1
+  kind: PersistentVolumeClaim
+  metadata:
+    labels:
+      event.redhat.com/owner: darmstadt-demo
+    name: darmstadt-postgresql
+    namespace: ${LAB_NAMESPACE}
+  spec:
+    accessModes:
+    - ReadWriteOnce
+    resources:
+      requests:
+        storage: 10Gi
+- apiVersion: objectbucket.io/v1alpha1
+  kind: ObjectBucketClaim
+  metadata:
+    labels:
+      event.redhat.com/owner: darmstadt-demo
+    name: darmstadt-mlflow-artifacts
+    namespace: ${LAB_NAMESPACE}
+  spec:
+    generateBucketName: darmstadt-mlflow
+    storageClassName: openshift-storage.noobaa.io
+- apiVersion: v1
+  data:
+    tls.conf: |
+      ssl = on
+      ssl_cert_file = '/tls/tls.crt'
+      ssl_key_file = '/tls/tls.key'
+  kind: ConfigMap
+  metadata:
+    labels:
+      event.redhat.com/owner: darmstadt-demo
+    name: darmstadt-postgresql-config
+    namespace: ${LAB_NAMESPACE}
+- apiVersion: networking.k8s.io/v1
+  kind: NetworkPolicy
+  metadata:
+    name: demo-ingress
+    namespace: ${LAB_NAMESPACE}
+    labels:
+      event.redhat.com/owner: darmstadt-demo
+  spec:
+    podSelector: {}
+    policyTypes:
+    - Ingress
+    ingress:
+    - from:
+      - podSelector: {}
+    - from:
+      - namespaceSelector:
+          matchLabels:
+            kubernetes.io/metadata.name: redhat-ods-applications
+      ports:
+      - port: 5432
+        protocol: TCP

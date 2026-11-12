@@ -1,0 +1,26 @@
+apiVersion: template.openshift.io/v1
+kind: Template
+metadata:
+  name: participant-quota
+parameters:
+- name: PARTICIPANT
+  description: OpenShift identity user1 through user50
+  required: true
+objects:
+- apiVersion: v1
+  kind: ResourceQuota
+  metadata:
+    name: participant-budget
+    namespace: tableschnappi-${PARTICIPANT}
+    labels:
+      event.redhat.com/owner: darmstadt-demo
+      opendatahub.io/dashboard: 'true'
+  spec:
+    hard:
+      requests.cpu: '3'
+      requests.memory: 7Gi
+      limits.cpu: '8'
+      limits.memory: 12Gi
+      persistentvolumeclaims: '2'
+      requests.storage: 10Gi
+      pods: '12'

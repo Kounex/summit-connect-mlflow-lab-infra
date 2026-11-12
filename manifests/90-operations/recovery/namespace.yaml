@@ -1,0 +1,7 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  labels:
+    event.redhat.com/owner: darmstadt-demo
+    event.redhat.com/purpose: uninstall-controller-recovery
+  name: darmstadt-ai-cleanup

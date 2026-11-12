@@ -1,0 +1,29 @@
+apiVersion: datasciencecluster.opendatahub.io/v2
+kind: DataScienceCluster
+metadata:
+  name: default-dsc
+  labels:
+    event.redhat.com/owner: darmstadt-demo
+spec:
+  components:
+    dashboard:
+      managementState: Managed
+    workbenches:
+      managementState: Managed
+    aipipelines:
+      managementState: Managed
+      argoWorkflowsControllers:
+        managementState: Managed
+    # TrustyAI requires the InferenceService API even for remote models.
+    kserve:
+      managementState: Managed
+    trustyai:
+      managementState: Managed
+    mlflowoperator:
+      managementState: Managed
+    # The model catalog backend is installed by this component.
+    modelregistry:
+      managementState: Managed
+      registriesNamespace: rhoai-model-registries
+    ogx:
+      managementState: Managed

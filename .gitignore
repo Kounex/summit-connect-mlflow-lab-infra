@@ -1,0 +1,9 @@
+# Local inputs and generated output. Never commit cluster credentials.
+config/site-values.yaml
+config/images.params.new
+.cache/
+rendered/
+*.kubeconfig
+*.env
+.DS_Store
+__pycache__/

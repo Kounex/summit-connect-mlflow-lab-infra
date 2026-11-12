@@ -51,8 +51,8 @@ Residual resources were audited against the original cluster inventory.
 
 The browser-first workshop revision and independent agent notebook are newer
 than the earlier live rehearsal. They need a rebuilt workbench image, refreshed
-source pin and a new pilot rehearsal; source pins currently describe the
-previous deployed revision. Application-specific test results and teaching
+source pin and a new pilot rehearsal; source pins and native Git BuildConfigs currently describe the
+previous deployed revision. Keep those pins aligned when rolling out the new image. Application-specific test results and teaching
 flow belong to [the application repository](https://github.com/Kounex/tableschnappi/blob/main/docs/VALIDATION.md).
 
 The model catalog was enabled after that rehearsal. Catalog namespace provenance

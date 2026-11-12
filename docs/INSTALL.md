@@ -152,6 +152,12 @@ paths and build contexts are in their YAML; no local archive upload is needed.
 Keep those refs aligned with `buildCommit` in `config/source.lock.json`;
 `commit` independently pins the chart and workbench source. The image lock records the
 original site's images; building and refreshing it is required at a new site.
+The application repository also publishes service images to GHCR, but this
+runbook builds all five lab images in OpenShift and uses their integrated-registry
+digests. It does not automatically consume GHCR images. The workbench image is
+not currently published by that GitHub workflow; its Red Hat base is pulled using
+the cluster's existing registry entitlement.
+
 The workbench BuildConfig adds the pinned lab dependencies to a digest-pinned
 RHOAI base; PostgreSQL is also digest-pinned. Commit the updated
 nonsecret lock for your site. Rebuilding source can change bytes if upstream

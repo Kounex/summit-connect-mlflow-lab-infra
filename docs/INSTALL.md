@@ -358,6 +358,47 @@ References: [SSA field ownership](https://kubernetes.io/docs/reference/using-api
 [OpenShift Git build inputs](https://docs.redhat.com/en/documentation/openshift_container_platform/4.22/observability/builds_using_buildconfig/creating-build-inputs),
 [custom RHOAI workbench images](https://docs.redhat.com/en/documentation/red_hat_openshift_ai_self-managed/3.5/html/managing_openshift_ai/creating-custom-workbench-images).
 
+## Update an existing workshop revision
+
+Treat source, image recipes and deployed digests as one reviewed change:
+
+1. Select a full application Git commit in `config/source.lock.json`. `commit`
+   selects the chart/notebook files; `buildCommit` selects image inputs.
+2. Align each BuildConfig's Git `ref`, source-commit annotation and output tag
+   in `manifests/10-images/builds.yaml` with `buildCommit` (tags use its first
+   seven characters). YAML is the build source of truth; editing a source lock
+   alone does not rewrite BuildConfigs.
+3. Run `bash scripts/build-images.sh`, inspect `config/images.params.new`, and
+   replace `config/images.params`. Commit the source/YAML/digest updates together
+   after verification. The current runbook builds all five images on OpenShift.
+4. Back up the participant's notebook files before a content reset. An existing
+   PVC deliberately retains edited source; a Helm upgrade alone does not replace it.
+
+For the `user1` pilot, with the target/login already configured as in step 1:
+
+```bash
+umask 077
+LAB_BACKUP_DIR="$HOME/.config/summit-connect-mlflow-lab/backups/$(date +%Y%m%d-%H%M%S)"
+mkdir -p "$LAB_BACKUP_DIR"
+chmod 700 "$LAB_BACKUP_DIR"
+helm get values tableschnappi -n tableschnappi-user1 -o yaml > "$LAB_BACKUP_DIR/helm-values.yaml"
+oc exec user1-0 -c user1 -n tableschnappi-user1 -- \
+  tar czf - -C /opt/app-root/src . > "$LAB_BACKUP_DIR/workbench.tar.gz"
+
+# Explicit content reset: removes this participant's project/PVC and app state.
+bash scripts/delete-participants.sh --destroy-participant-data 1 1
+bash scripts/apply-participants.sh /private/path/model-api-key 1 1
+bash scripts/warm-guardrails.sh 1 1
+```
+
+The account and shared MLflow data remain; prompt seed hooks preserve existing
+versions/aliases. Follow the application instructor guide to verify/restore the
+intended prompt alias and empty guardrail baseline, then rehearse the workshop
+as the real participant. Rebuild/reset only the intended range; provisioning the
+full roster is a separate capacity decision. Private backups can contain credentials
+or participant data and must stay outside Git. Restore exported notebook edits
+selectively; copying the old checkout wholesale would reintroduce old guides.
+
 ## Checking changes locally
 
 After configuring site values and an `oc` context, run:

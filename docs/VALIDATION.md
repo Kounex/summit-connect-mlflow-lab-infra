@@ -49,13 +49,28 @@ a controller before finalizing its LLM configuration objects. The checked-in
 native controller, which finalized them normally. No finalizers were stripped.
 Residual resources were audited against the original cluster inventory.
 
-The browser-first workshop revision and independent agent notebook are newer
-than the earlier live rehearsal. They need a rebuilt workbench image, refreshed
-source pin and a new pilot rehearsal; source pins and native Git BuildConfigs currently describe the
-previous deployed revision. Keep those pins aligned when rolling out the new image. Application-specific test results and teaching
-flow belong to [the application repository](https://github.com/Kounex/tableschnappi/blob/main/docs/VALIDATION.md).
+## Updated pilot deployment — 2026-11-12
 
-The model catalog was enabled after that rehearsal. Catalog namespace provenance
+Both repository PRs were merged. Native Git builds completed for all five images
+from `buildCommit` in `config/source.lock.json`; the digest lock was refreshed.
+The pilot was backed up privately and recreated with the normal explicit `1 1`
+delete/apply/warm entry commands. Its account and shared MLflow history remained.
+The Notebook, source ConfigMap and PVC checkout match the selected `commit`.
+
+Source and image-input commits differ intentionally: the live rehearsal found
+a UTF-8 decoder issue in the notebook's source-only MCP helper. The corrected
+source was repackaged and the pilot recreated without rebuilding unchanged image
+recipes. The workbench dependency build passed its base-image conflict check.
+Native auth/Secret references, readiness and real participant browser access pass.
+Final prompt/guardrail baseline restoration and warmup also pass.
+
+The application-specific scenario results are maintained only in
+[TableSchnappi's validation notes](https://github.com/Kounex/tableschnappi/blob/main/docs/VALIDATION.md).
+The reproducible backup/build/reset procedure is in
+[updating an existing workshop](INSTALL.md#update-an-existing-workshop-revision).
+Only user1 was deployed; no extra participant accounts/stacks were allocated.
+
+Model catalog enablement postdated the full AI-uninstall rehearsal. Catalog namespace provenance
 and cleanup are documented in [teardown](TEARDOWN.md); full teardown with the
 catalog enabled has not yet been exercised.
 

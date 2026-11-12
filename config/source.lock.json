@@ -1,9 +1,9 @@
 {
   "repository": "https://github.com/Kounex/tableschnappi.git",
-  "commit": "affec2accb74982e00ee3e38ac309cccdb72a81e",
+  "commit": "9da488c68b213340da6e7985d4198972a7d1e616",
   "rhoaiChannel": "stable-3.5",
   "participantCount": 50,
   "participants": "user1 through user50",
   "testedRhoaiCSV": "rhods-operator.3.5.2",
-  "buildCommit": "7e8f6436c1d1ca4f9dbdcd4ae1dedd32146230c9"
+  "buildCommit": "17276da235560dc388daad9f242806e547e323c0"
 }

@@ -14,14 +14,14 @@ metadata:
   labels:
     event.redhat.com/owner: darmstadt-demo
   annotations:
-    event.redhat.com/source-commit: 7e8f6436c1d1ca4f9dbdcd4ae1dedd32146230c9
+    event.redhat.com/source-commit: 17276da235560dc388daad9f242806e547e323c0
 spec:
   runPolicy: Serial
   source:
     type: Git
     git:
       uri: https://github.com/Kounex/tableschnappi.git
-      ref: 7e8f6436c1d1ca4f9dbdcd4ae1dedd32146230c9
+      ref: 17276da235560dc388daad9f242806e547e323c0
   strategy:
     type: Docker
     dockerStrategy:
@@ -29,7 +29,7 @@ spec:
   output:
     to:
       kind: ImageStreamTag
-      name: tableschnappi-frontend:7e8f643
+      name: tableschnappi-frontend:17276da
   resources:
     requests:
       cpu: 500m
@@ -56,14 +56,14 @@ metadata:
   labels:
     event.redhat.com/owner: darmstadt-demo
   annotations:
-    event.redhat.com/source-commit: 7e8f6436c1d1ca4f9dbdcd4ae1dedd32146230c9
+    event.redhat.com/source-commit: 17276da235560dc388daad9f242806e547e323c0
 spec:
   runPolicy: Serial
   source:
     type: Git
     git:
       uri: https://github.com/Kounex/tableschnappi.git
-      ref: 7e8f6436c1d1ca4f9dbdcd4ae1dedd32146230c9
+      ref: 17276da235560dc388daad9f242806e547e323c0
   strategy:
     type: Docker
     dockerStrategy:
@@ -71,7 +71,7 @@ spec:
   output:
     to:
       kind: ImageStreamTag
-      name: tableschnappi-backend:7e8f643
+      name: tableschnappi-backend:17276da
   resources:
     requests:
       cpu: 500m
@@ -98,14 +98,14 @@ metadata:
   labels:
     event.redhat.com/owner: darmstadt-demo
   annotations:
-    event.redhat.com/source-commit: 7e8f6436c1d1ca4f9dbdcd4ae1dedd32146230c9
+    event.redhat.com/source-commit: 17276da235560dc388daad9f242806e547e323c0
 spec:
   runPolicy: Serial
   source:
     type: Git
     git:
       uri: https://github.com/Kounex/tableschnappi.git
-      ref: 7e8f6436c1d1ca4f9dbdcd4ae1dedd32146230c9
+      ref: 17276da235560dc388daad9f242806e547e323c0
   strategy:
     type: Docker
     dockerStrategy:
@@ -113,7 +113,7 @@ spec:
   output:
     to:
       kind: ImageStreamTag
-      name: tableschnappi-mcp:7e8f643
+      name: tableschnappi-mcp:17276da
   resources:
     requests:
       cpu: 500m
@@ -140,7 +140,7 @@ metadata:
   labels:
     event.redhat.com/owner: darmstadt-demo
   annotations:
-    event.redhat.com/source-commit: 7e8f6436c1d1ca4f9dbdcd4ae1dedd32146230c9
+    event.redhat.com/source-commit: 17276da235560dc388daad9f242806e547e323c0
 spec:
   runPolicy: Serial
   source:
@@ -148,7 +148,7 @@ spec:
     contextDir: packages/mlflow-proxy
     git:
       uri: https://github.com/Kounex/tableschnappi.git
-      ref: 7e8f6436c1d1ca4f9dbdcd4ae1dedd32146230c9
+      ref: 17276da235560dc388daad9f242806e547e323c0
   strategy:
     type: Docker
     dockerStrategy:
@@ -156,7 +156,7 @@ spec:
   output:
     to:
       kind: ImageStreamTag
-      name: tableschnappi-mlflow-proxy:7e8f643
+      name: tableschnappi-mlflow-proxy:17276da
   resources:
     requests:
       cpu: 500m
@@ -183,14 +183,14 @@ metadata:
   labels:
     event.redhat.com/owner: darmstadt-demo
   annotations:
-    event.redhat.com/source-commit: 7e8f6436c1d1ca4f9dbdcd4ae1dedd32146230c9
+    event.redhat.com/source-commit: 17276da235560dc388daad9f242806e547e323c0
 spec:
   runPolicy: Serial
   source:
     type: Git
     git:
       uri: https://github.com/Kounex/tableschnappi.git
-      ref: 7e8f6436c1d1ca4f9dbdcd4ae1dedd32146230c9
+      ref: 17276da235560dc388daad9f242806e547e323c0
     contextDir: workshop/helpers
   strategy:
     type: Docker
@@ -199,7 +199,7 @@ spec:
   output:
     to:
       kind: ImageStreamTag
-      name: tableschnappi-workbench:7e8f643
+      name: tableschnappi-workbench:17276da
   resources:
     requests: {cpu: 500m, memory: 1Gi}
     limits: {cpu: '2', memory: 3Gi}

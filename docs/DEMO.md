@@ -4,7 +4,9 @@ This document explains the deployed infrastructure and connections. For the
 attendee exercises and schedule, use [the application workshop](https://github.com/Kounex/tableschnappi/blob/main/workshop/README.md).
 Each participant `userN` owns project
 `tableschnappi-userN`. Demo login credentials match: for example,
-username `user1`, password `user1`.
+username `user1`, password `user1`. The internal `test:test` account gets the
+same stack and permissions in `tableschnappi-test`. It is selected separately
+with `--test`, so instructor rehearsals can leave attendee workspaces clean.
 
 | Each participant gets | Shared across the event |
 |---|---|
@@ -47,6 +49,28 @@ model discovery entry, local inference deployment or MaaS/Kuadrant gateway in
 this application path. The OpenShift AI project discovery label
 `opendatahub.io/dashboard: "true"` remains in
 `manifests/30-participant/project/namespace.yaml`.
+
+## NeMo service wiring
+
+The DSC enables TrustyAI. The application chart creates a `NemoGuardrails` CR
+referencing `tableschnappi-guardrails-config`; the TrustyAI operator creates
+the NeMo Deployment and Service and mounts that configuration. Helm sets the
+assistant's `UPSTREAM_URL` using the release name and namespace, for example
+`http://tableschnappi-guardrails.tableschnappi-user7.svc.cluster.local:80`.
+Kubernetes DNS resolves that stable Service address to the current pods.
+
+The Node.js backend forwards chat to the Python LangGraph assistant. Its guard
+nodes explicitly call NeMo's `/v1/chat/completions`. With `self check input`
+enabled, NeMo asks the configured model to classify the submitted text using
+the ConfigMap's moderation prompt. If allowed, the assistant separately calls
+the model with the restaurant system prompt from MLflow and can use MCP tools.
+The initial empty policy performs no model-based input classification.
+
+Both guard nodes currently reuse NeMo's input check: the output node submits
+the generated answer for that same check. Their outcomes appear in MLflow as
+`allowed`, `blocked`, `skipped` or `error_fail_open`. This wiring is explicit
+application instrumentation; enabling TrustyAI alone does not intercept calls
+from arbitrary applications or the independent notebook agent.
 
 ## Platform model catalog
 

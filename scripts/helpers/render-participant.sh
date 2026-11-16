@@ -3,7 +3,8 @@
 set -euo pipefail
 cd -- "$(dirname -- "$0")/../.."
 participant=${1:?Supply userN}
-[[ $participant =~ ^user([1-9]|[1-4][0-9]|50)$ ]]
+source scripts/helpers/participants.sh
+participant_name "$participant"
 source scripts/helpers/participant-yaml.sh
 emit() { printf '%s\n' '---'; "$@"; }
 for template in manifests/30-participant/project/*.yaml; do

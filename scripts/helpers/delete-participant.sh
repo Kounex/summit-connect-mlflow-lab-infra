@@ -3,9 +3,10 @@
 set -euo pipefail
 ROOT=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/../.." && pwd)
 source "$ROOT/scripts/helpers/check-target.sh"
-[[ $# == 2 && $1 =~ ^user([1-9]|[1-4][0-9]|50)$ && $2 == --destroy-participant-data ]] || {
+[[ $# == 2 && $2 == --destroy-participant-data ]] || {
   echo "Usage: $0 user1 --destroy-participant-data" >&2; exit 1;
 }
+participant_name "$1"
 participant=$1
 namespace=tableschnappi-$participant
 if [[ -n $(oc get ns "$namespace" --ignore-not-found -o name) ]]; then

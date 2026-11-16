@@ -2,17 +2,16 @@
 # Local rendering checks only; server admission is checked by apply --dry-run.
 set -euo pipefail
 if [[ ${1:-} == --help ]]; then
-  echo "Usage: $0 [START END] (local project/Helm rendering checks)"; exit 0
+  echo "Usage: $0 [START END | --test] (local project/Helm rendering checks)"; exit 0
 fi
 cd -- "$(dirname -- "$0")/.."
 source scripts/helpers/participants.sh
 source scripts/helpers/participant-yaml.sh
-participant_range "$@"
+participant_selection "$@"
 bash scripts/helpers/prepare-workbench-source.sh >&2
 bash scripts/helpers/image-values.sh > .cache/image-values.yaml
 bash scripts/helpers/helm-participant.sh user1 lint
-for ((number=first_participant; number<=last_participant; number++)); do
-  participant=$(printf 'user%d' "$number")
+for participant in "${participants[@]}"; do
   namespace=tableschnappi-$participant
   for template in manifests/30-participant/project/*.yaml; do
     oc process --local -f "$template" -p "PARTICIPANT=$participant" -o json |

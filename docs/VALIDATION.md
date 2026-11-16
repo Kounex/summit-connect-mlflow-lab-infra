@@ -1,7 +1,8 @@
 # Validation
 
-Last live rehearsal: **2026-11-12**. One real participant (`user1`) passed the
-functional checks. This is evidence for the pilot, not a 50-user capacity result.
+Last live checks: **2026-11-16**. The earlier pilot evidence below is dated;
+the event-readiness section records the expanded roster. Provisioning and
+readiness checks do not establish simultaneous 50-user model capacity.
 
 ## Tested configuration
 
@@ -26,7 +27,7 @@ functional checks. This is evidence for the pilot, not a 50-user capacity result
 | Cluster move | Removed the old lab/AI installation, preserved unrelated applications/storage/identities and recreated the pilot on another cluster |
 
 The notebook executes as its service account; browser SSO/isolation checks used
-the human account. Only one real attendee account was provisioned. Impersonated
+the human account. At the November 12 pilot, only one real attendee account was provisioned. Impersonated
 RBAC checks do not demonstrate a second participant's complete login journey.
 
 Publication preparation also passed from a clean copy using only public files
@@ -91,24 +92,61 @@ The application-specific scenario results are maintained only in
 [TableSchnappi's validation notes](https://github.com/Kounex/tableschnappi/blob/main/docs/VALIDATION.md).
 The reproducible backup/build/reset procedure is in
 [updating an existing workshop](INSTALL.md#update-an-existing-workshop-revision).
-Only user1 was deployed; no extra participant accounts/stacks were allocated.
+At that rehearsal, only user1 was deployed; no extra accounts/stacks were allocated.
 
 Model catalog enablement postdated the full AI-uninstall rehearsal. Catalog namespace provenance
 and cleanup are documented in [teardown](TEARDOWN.md); full teardown with the
 catalog enabled has not yet been exercised.
 
+## Event readiness — 2026-11-16
+
+The full roster `user1`–`user50` and the identical internal `test` stack are
+deployed. Passwords match usernames, including `test:test`; neither first-login
+password changes nor administrator access are required.
+
+| Check | Result |
+|---|---|
+| Roster | 51 accounts, separate projects/workspaces, 255 ready Deployments, 51 ready workbenches and 51 bound 5 GiB notebook PVCs |
+| Native identity and content | All 51 workbenches passed source-pin, native MLflow auth, prompt alias, MCP discovery and notebook dependency checks |
+| Clean attendee baseline | All 50 attendees have `active` and `baseline` at prompt version 1, empty NeMo input flows, and no active MLflow runs/traces |
+| Guardrail warmup | All 51 empty-policy services passed both checks; both requests pass before attendees enable a policy |
+| Public app routes | All 51 frontend URLs returned the app and successfully proxied restaurant data and assistant health |
+| Real browser identities | `test:test` and `user50:user50` opened MLflow and Jupyter; user50 sees its own project and can access the shared model registry |
+| Isolation | Explicit foreign-experiment reads returned `403 PERMISSION_DENIED` for both normal identities; the workspace lists contained only their own workspace |
+| Internal rehearsal | Restaurant model/MCP traces, feedback, prompt activation/restoration, allowed/blocked guards and independent notebook agent tracing passed in `test` |
+| User1 reset | Private notebook/config/database/workspace exports verified; old notebook PV reclaimed; project recreated, prompt reseeded at version 1 and active history empty |
+
+The user1 reset used the native workspace APIs: prompts/traces were deleted;
+renamed experiments and their runs remain in MLflow's soft-deleted history.
+Other workspaces and shared services were preserved. The internal test workspace
+retains its troubleshooting traces and second prompt version; its active alias
+and guardrail configuration were restored to the attendee baseline.
+
+Deployment used bounded groups of four through the normal range entry. First
+image pulls on an additional node added startup time; allow the runbook waits
+to finish. Readiness checks are read-only and were run across the full roster.
+The five schedulable nodes had enough requested CPU/memory for these stacks;
+no node scaling was needed. This establishes deployed/idle readiness and an
+internal functional rehearsal, **not** 50 simultaneous model/guardrail sessions
+or sufficient upstream provider quota.
+
+Local checks cover all 50 attendee renders plus `--test`, chart lint,
+shell/Python syntax, local Markdown links, public-file credential scanning and
+nine unit tests for target selection, batch failure handling and reset scope.
+The full-stack rehearsal remains described in the application repository;
+this repository does not duplicate attendee instructions.
+
 ## Remaining gates
 
-1. Deploy the full roster and rehearse simultaneous workbench/model/guardrail
-   load. Use the application workshop's current questions and
+1. Rehearse simultaneous workbench/model/guardrail load across the roster.
+   Use the application workshop's current questions and
    agent experiments to size model and guard calls; one turn can make multiple
    provider requests. Check CPU, memory and provider quota.
-2. Rehearse as a second real identity, including cross-workspace denial.
-3. Exercise installation on a target without a bootstrapped AI operator. The
+2. Exercise installation on a target without a bootstrapped AI operator. The
    replay began with an operator-only installation and no AI workloads.
-4. Verify database/password/artifact backup restoration if retaining history.
+3. Verify database/password/artifact backup restoration if retaining history.
    Private backups were taken; the replay intentionally started with clean data.
-5. Rehearse complete teardown with the model catalog enabled.
+4. Rehearse complete teardown with the model catalog enabled.
 
 Stable-channel operator updates are accepted by this demo's policy. Later
 versions need a new rehearsal before describing them as tested.

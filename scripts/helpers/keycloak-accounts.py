@@ -2,6 +2,7 @@
 import base64
 import json
 import os
+import re
 from pathlib import Path
 import subprocess
 import sys
@@ -16,7 +17,11 @@ def oc_json(*args):
 
 
 def main():
-    mode, directory, first, last = sys.argv[1:]
+    mode, directory, *usernames = sys.argv[1:]
+    if mode not in ('create', 'delete') or not usernames or any(
+        not re.fullmatch(r'(?:test|user(?:[1-9]|[1-4][0-9]|50))', name) for name in usernames
+    ):
+        raise ValueError('Supply create/delete, a private directory, and user1..user50 or test')
     destination = Path(directory).resolve()
     if destination.is_relative_to(Path.cwd().resolve()):
         raise ValueError("Credentials must be outside this repository")
@@ -56,8 +61,7 @@ def main():
             content = response.read()
             return json.loads(content) if content else None
 
-    for number in range(int(first), int(last) + 1):
-        username = f"user{number}"
+    for username in usernames:
         receipt_path = destination / f"{username}.json"
         receipt = json.loads(receipt_path.read_text()) if receipt_path.exists() else None
         if receipt and (receipt.get("issuer"), receipt.get("username"), receipt.get("owner")) != (issuer, username, "darmstadt-demo"):

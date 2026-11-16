@@ -2,7 +2,8 @@
 
 Prepare OpenShift AI for a one-hour, hands-on MLflow workshop. Each participant
 (`user1`–`user50`) gets a restaurant application, Jupyter workbench and MLflow
-workspace. A shared, operator-managed MLflow server records traces, prompt
+workspace. An identical `test:test` account has its own stack for instructor
+troubleshooting. A shared, operator-managed MLflow server records traces, prompt
 versions and feedback.
 
 The application calls an external OpenAI-compatible model API. This repository
@@ -56,13 +57,16 @@ Build images on each new cluster and refresh `config/images.params` before deplo
 The checked-in image digests document the tested build; they do not transfer
 images into another cluster's internal registry.
 
-Participant demo credentials use **`userN:userN`**. Restaurant URLs are public,
+Participant demo credentials use **`userN:userN`**; the internal account uses
+**`test:test`**. Numeric batches select attendees only; use `--test` explicitly
+for the internal account. Restaurant URLs are public,
 use synthetic data, and the current guardrail integration fails open on errors.
 This is a workshop environment; read the [limitations](docs/DEMO.md#limitations).
 
-One real participant has passed the functional rehearsal. Fifty-user concurrent
-capacity, installation without a preinstalled AI operator, and backup restoration
-remain [validation gates](docs/VALIDATION.md).
+Use `scripts/check-readiness.sh 1 50` and `scripts/check-readiness.sh --test`
+for read-only baseline checks. Simultaneous 50-user model load, installation
+without a preinstalled AI operator, and backup restoration remain
+[validation gates](docs/VALIDATION.md).
 
 ## Application and attendee material
 

@@ -4,7 +4,8 @@ set -euo pipefail
 cd -- "$(dirname -- "$0")/../.."
 participant=${1:?Supply userN}
 mode=${2:?Supply render, dry-run or apply}
-[[ $participant =~ ^user([1-9]|[1-4][0-9]|50)$ ]]
+source scripts/helpers/participants.sh
+participant_name "$participant"
 commit=$(jq -er .commit config/source.lock.json)
 [[ $(cat .cache/SOURCE_COMMIT) == "$commit" ]]
 chart=.cache/chart-$commit

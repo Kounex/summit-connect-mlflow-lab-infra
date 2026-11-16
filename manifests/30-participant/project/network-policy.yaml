@@ -4,7 +4,7 @@ metadata:
   name: participant-network-policy
 parameters:
 - name: PARTICIPANT
-  description: OpenShift identity user1 through user50
+  description: OpenShift identity user1 through user50, or the internal test account
   required: true
 objects:
 - apiVersion: networking.k8s.io/v1

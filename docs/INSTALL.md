@@ -15,7 +15,7 @@ access. The cluster must already have:
 - Working ingress/OAuth and image pull entitlement for RHOAI/registry.redhat.io.
 - A managed integrated image registry and default dynamic RBD storage class.
 - ODF/NooBaa storage class `openshift-storage.noobaa.io` and working cert-manager.
-- Participant identities authenticating as `user1`–`user50` before the event
+- Participant identities authenticating as `user1`–`user50`, plus internal `test`, before the event
   (or use the optional existing-Keycloak command below).
 
 The installation starts with **no OpenShift AI components or restaurant lab installed**.
@@ -286,14 +286,20 @@ bash scripts/warm-guardrails.sh 1 1
 After the pilot, apply the full roster or an explicit range:
 
 ```bash
-bash scripts/apply-participants.sh /private/path/model-api-key
-bash scripts/warm-guardrails.sh 1 50
+APPLY_CONCURRENCY=4 bash scripts/apply-participants.sh /private/path/model-api-key 1 50
+WARM_CONCURRENCY=4 bash scripts/warm-guardrails.sh 1 50
+# Identical, separate internal troubleshooting stack:
+bash scripts/apply-participants.sh /private/path/model-api-key --test
+bash scripts/warm-guardrails.sh --test
 ```
 
 No range means users 1 through `participantCount` (50). Supplying `7 7` targets
-only user7. Apply is sequential and stops on failure. Successfully installed
-participants remain available; the batch is not a transaction. Parallel disjoint
-ranges may be used after checking capacity; never operate twice on one namespace.
+only user7. `--test` selects only `tableschnappi-test`; numeric batches never
+include it. Apply defaults to sequential; `APPLY_CONCURRENCY=1..8` enables
+bounded groups after checking capacity. A failed group is fully awaited and
+stops later groups; successful participants remain available. The batch is not
+a transaction. Use one apply entry at a time: source packaging/cache preparation
+is shared. `WARM_CONCURRENCY=1..8` controls independent guardrail warmup Jobs.
 
 For an existing Helm participant, `apply-participants.sh --dry-run KEY START END`
 uses SSA server dry-run for project/config resources and Helm server dry-run for
@@ -313,13 +319,14 @@ Keycloak. Keep its realm, clients and admin account intact. To provision a pilot
 through the same range mechanism used for the roster:
 
 **Demo login convention: username and password are identical**, from
-`user1:user1` through `user50:user50`. Passwords are permanent; attendees do not
+`user1:user1` through `user50:user50`, plus **`test:test`**. Passwords are permanent; attendees do not
 have to change them at first login.
 
 ```bash
 bash scripts/provision-accounts.sh "$HOME/.config/restaurant-lab-accounts" 1 1
-# After pilot acceptance, the full range would be:
-# bash scripts/provision-accounts.sh "$HOME/.config/restaurant-lab-accounts" 1 50
+# After pilot acceptance, provision the full roster and internal account:
+bash scripts/provision-accounts.sh "$HOME/.config/restaurant-lab-accounts" 1 50
+bash scripts/provision-accounts.sh "$HOME/.config/restaurant-lab-accounts" --test
 ```
 
 This optional entry uses the Keycloak Admin REST API with the existing bootstrap
@@ -350,7 +357,22 @@ same participant names through that provider instead; skip this optional step.
 Use the application repository's
 [instructor preparation](https://github.com/Kounex/tableschnappi/blob/main/docs/INSTRUCTOR.md)
 and [attendee workshop](https://github.com/Kounex/tableschnappi/blob/main/workshop/README.md)
-for the rehearsal, schedule and exercises. This infrastructure repository does
+for the rehearsal, schedule and exercises. Run the baseline checks first:
+
+```bash
+bash scripts/check-readiness.sh 1 50
+bash scripts/check-readiness.sh --test
+```
+
+These checks use each workbench's native identity and verify rollouts, source,
+model-key presence, prompt aliases at version 1, empty guardrails, MCP discovery
+and notebook dependencies. Attendees must also have no active runs/traces; `test`
+can retain troubleshooting history. The checks make no model calls or trace writes. These are
+pre-event baseline checks; attendee edits during the lab can intentionally make
+them fail. `CHECK_CONCURRENCY=1..8` controls parallelism (default 4).
+Rehearse model calls, prompt changes and guardrails with `test:test` to keep
+attendee workspaces clean. The test user has the same namespace-local rights,
+quotas and stack, with no extra privileges. This infrastructure repository does
 not duplicate those steps. Prepare each attendee's restaurant, MLflow, OpenShift
 AI and Console links. Verify project access and workbench readiness before the event.
 
@@ -388,12 +410,14 @@ resources owned by other tools, review the ownership transition before migration
 |---|---|
 | `scripts/build-images.sh` | Apply five Git BuildConfigs, start builds, wait and resolve image digests |
 | `scripts/bootstrap-secrets.sh database` / `mlflow` | Initial database password / generated storage credentials |
-| `scripts/render-participants.sh [START END]` | Review project/source/chart YAML on stdout |
-| `scripts/apply-participants.sh [--dry-run] /absolute/key-file [START END]` | Native project resources plus pinned Helm installation |
-| `scripts/validate.sh [START END]` | Local project/chart rendering checks |
-| `scripts/warm-guardrails.sh [--expect-blocked] START END` | Warm/check baseline or enabled NeMo policy |
-| `scripts/provision-accounts.sh /absolute/private-directory START END` | Create only the selected existing-Keycloak accounts; `--delete-owned-accounts` cleans them up |
-| `scripts/delete-participants.sh --destroy-participant-data START END` | Explicit namespace/PVC and external pull-grant cleanup |
+| `scripts/render-participants.sh [START END or --test]` | Review project/source/chart YAML on stdout |
+| `scripts/apply-participants.sh [--dry-run] /absolute/key-file [START END or --test]` | Native project resources plus pinned Helm installation |
+| `scripts/validate.sh [START END or --test]` | Local project/chart rendering checks |
+| `scripts/warm-guardrails.sh [--expect-blocked] START END or --test` | Warm/check baseline or enabled NeMo policy |
+| `scripts/check-readiness.sh [START END or --test]` | Read-only rollout, native MLflow, baseline and notebook/MCP checks |
+| `scripts/reset-mlflow.sh --destroy-workspace-history userN-or-test /absolute/private-backup-directory` | Export/verify and clear one workspace before project recreation |
+| `scripts/provision-accounts.sh /absolute/private-directory START END or --test` | Create selected existing-Keycloak accounts; `--delete-owned-accounts` cleans them up |
+| `scripts/delete-participants.sh --destroy-participant-data START END or --test` | Explicit namespace/PVC and external pull-grant cleanup |
 
 Every entry supports `--help`. `scripts/helpers/` implements one-participant
 operations, source/chart packaging and image-value generation; normally run the
@@ -437,7 +461,10 @@ bash scripts/apply-participants.sh /private/path/model-api-key 1 1
 bash scripts/warm-guardrails.sh 1 1
 ```
 
-The account and shared MLflow data remain; prompt seed hooks preserve existing
+For a completely clean participant, including rehearsal history, run
+[`reset-mlflow.sh` before deleting its project](TEARDOWN.md#clear-one-workspaces-mlflow-history).
+The ordinary project reset above retains the account and shared MLflow data;
+prompt seed hooks preserve existing
 versions/aliases. Follow the application instructor guide to verify/restore the
 intended prompt alias and empty guardrail baseline, then rehearse the workshop
 as the real participant. Rebuild/reset only the intended range; provisioning the
@@ -450,7 +477,9 @@ selectively; copying the old checkout wholesale would reintroduce old guides.
 After configuring site values and an `oc` context, run:
 
 ```bash
+python3 -m unittest discover -s tests -v
 bash scripts/validate.sh 1 50
+bash scripts/validate.sh --test
 bash scripts/render-participants.sh 1 1 > /tmp/user1-preview.yaml
 git diff --check
 ```

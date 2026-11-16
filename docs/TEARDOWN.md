@@ -30,12 +30,43 @@ workbench routes/resources are absent, and the external image-pull binding is
 absent. Check the storage class/PV reclaim policy: namespace deletion alone is
 not proof that a retained volume or its contents were removed.
 
+## Clear one workspace's MLflow history
+
+A project reset alone retains MLflow history. For a clean rehearsal user, export
+notebook files first, then run this **while its workbench still exists**:
+
+```bash
+bash scripts/reset-mlflow.sh --destroy-workspace-history user1 \
+  "$HOME/.config/restaurant-lab-backups"
+bash scripts/delete-participants.sh --destroy-participant-data 1 1
+bash scripts/apply-participants.sh /private/path/model-api-key 1 1
+bash scripts/warm-guardrails.sh 1 1
+bash scripts/check-readiness.sh 1 1
+```
+
+The reset pauses that participant's assistant and uses its workbench service
+account, namespace and native MLflow workspace. Avoid using its notebook during
+export/reset. It exports metadata, trace bodies and run artifacts into a private
+archive outside Git, verifies the archive, then deletes only backed-up prompts,
+models and traces. Experiments are renamed and **soft-deleted** through the native
+API, retiring their runs and freeing canonical names for the new seed. Old
+experiment/run metadata remains recoverable in MLflow trash; this is a clean
+active workspace, not a physical purge of the shared database or S3 bucket.
+
+Other participants are untouched. The assistant stays paused until recreation;
+on an export failure, history is retained: inspect the error before retrying,
+or restore the assistant's replica count if cancelling. Backups can contain
+credentials or participant data. Archive verification is not a restore rehearsal.
+For the internal account, use `test` in the reset command and `--test` in the
+subsequent delete/apply/warm/check commands.
+
 ## All participant projects
 
 The following command is destructive and explicit. Run it only after exports:
 
 ```bash
 DELETE_CONCURRENCY=8 bash scripts/delete-participants.sh --destroy-participant-data 1 50
+bash scripts/delete-participants.sh --destroy-participant-data --test
 oc get ns -l event.redhat.com/owner=darmstadt-demo
 oc get rolebinding -n tableschnappi-demo -l event.redhat.com/owner=darmstadt-demo
 ```
@@ -50,8 +81,15 @@ bash scripts/provision-accounts.sh --delete-owned-accounts \
   "$HOME/.config/restaurant-lab-accounts" 1 1
 ```
 
-Use the same private receipt directory and explicit range as provisioning. The
-helper checks the issuer, exact username and recorded Keycloak user ID, deletes
+Use the same private receipt directory and explicit range as provisioning.
+For all attendees, select `1 50`; delete the internal account separately:
+
+```bash
+bash scripts/provision-accounts.sh --delete-owned-accounts \
+  "$HOME/.config/restaurant-lab-accounts" --test
+```
+
+The helper checks the issuer, exact username and recorded Keycloak user ID, deletes
 only those accounts, revokes their OpenShift OAuth access/authorization tokens,
 and removes their corresponding OpenShift User/Identity records. It retains the
 private receipt for audit; a later create generates a new ID and reuses the `userN:userN` demo convention. Do not
@@ -79,7 +117,7 @@ set -euo pipefail
 [[ $(oc whoami --show-server) == "$EXPECTED_API_SERVER" ]]
 [[ $(oc get ns tableschnappi-demo -o jsonpath='{.metadata.labels.event\.redhat\.com/owner}') == darmstadt-demo ]]
 [[ $(oc get mlflow mlflow -o jsonpath='{.metadata.labels.event\.redhat\.com/owner}') == darmstadt-demo ]]
-remaining=$(oc get ns -l event.redhat.com/owner=darmstadt-demo -o json | jq '[.items[] | select(.metadata.name | startswith("tableschnappi-user"))] | length')
+remaining=$(oc get ns -l event.redhat.com/owner=darmstadt-demo -o json | jq '[.items[] | select(.metadata.name | test("^tableschnappi-(user([1-9]|[1-4][0-9]|50)|test)$"))] | length')
 [[ $remaining == 0 ]]
 oc delete mlflow mlflow --wait=true --timeout=300s
 for secret in darmstadt-mlflow-db darmstadt-mlflow-s3; do

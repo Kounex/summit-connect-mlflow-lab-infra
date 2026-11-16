@@ -11,8 +11,4 @@ owned_namespace() {
     echo "Namespace $1 is not lab-owned; stopping." >&2; exit 1;
   }
 }
-participant_name() {
-  [[ ${1:-} =~ ^user([1-9]|[1-4][0-9]|50)$ ]] || {
-    echo 'Expected user1 through user50.' >&2; exit 1;
-  }
-}
+source "$(dirname -- "${BASH_SOURCE[0]}")/participants.sh"

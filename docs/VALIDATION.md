@@ -136,6 +136,38 @@ nine unit tests for target selection, batch failure handling and reset scope.
 The full-stack rehearsal remains described in the application repository;
 this repository does not duplicate attendee instructions.
 
+## Alternating models — 2026-11-17
+
+The model-update entry now assigns odd users to `qwen38-27b` on the RHDP
+endpoint and even users to `publishers/prelude-maas/models/glm-53-flash` on
+the second MaaS provider. This gives 25 attendees per provider; `test` stays
+on Qwen. Each namespace uses its assigned model/key in the restaurant assistant,
+NeMo and workbench. Source profiles contain no credentials.
+
+All 51 namespaces passed the final assignment/key audit, including actual
+workbench process environments and retained native MLflow auth. Assistant and
+NeMo Deployments were ready and used the expected endpoint/model; there were
+25 attendee assignments per provider plus the internal Qwen test stack.
+
+Both providers passed real completions. Qwen passed a restaurant menu/tool turn;
+GLM passed the notebook LangGraph agent's menu lookup, with MCP and a trace in
+the internal test workspace. This checks compatibility, not answer quality or
+simultaneous provider capacity. Human-edited NeMo policy is retained by the
+renderer, and model-update hooks do not reseed prompt aliases or clear history.
+
+The operation uses native Helm release values plus profile YAML, SSA Secrets,
+explicit consumer restarts and operator-created NeMo resources. The Helm 4.3.2
+pilot exposed a renderer plugin requirement and the Notebook CR's restriction
+on `spec.template.metadata`; the renderer now uses a supported container env
+revision for notebooks. Tests cover that schema regression and retaining an
+enabled/custom guardrail policy. Helm 4 updates use client-side three-way merges
+to retain live attendee edits without general force-conflict handling.
+
+The local unit suite passes eleven tests with PyYAML, and shell/Python syntax
+checks pass. Private before-change snapshots include release values, guardrail
+configuration and model Secrets. Keys remain outside the public repository.
+See [the repeatable update command](INSTALL.md#change-models-on-existing-stacks).
+
 ## Remaining gates
 
 1. Rehearse simultaneous workbench/model/guardrail load across the roster.

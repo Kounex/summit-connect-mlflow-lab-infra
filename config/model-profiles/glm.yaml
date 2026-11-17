@@ -1,0 +1,4 @@
+model:
+  endpoint: https://maas.apps.ocp.cloud.rhai-tmm.dev
+  name: publishers/prelude-maas/models/glm-53-flash
+  extraBody: false

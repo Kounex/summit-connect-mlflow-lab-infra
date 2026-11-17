@@ -276,3 +276,16 @@ PVs and ObjectBuckets separately.
 Participant and complete AI teardown have been rehearsed, including the specific
 3.5.2 recovery above. Model catalog enablement was added afterwards; its complete
 teardown has not yet been rehearsed. See [validation limits](VALIDATION.md).
+
+## Local model-update helper
+
+Helm 4 model updates install the repository's local `lab-model-policy`
+postrenderer plugin. After all Helm operations finish, remove that local plugin
+before deleting or relocating the checkout:
+
+```bash
+helm plugin uninstall lab-model-policy
+```
+
+This removes only the local CLI plugin, not cluster resources or participant data.
+Keep private model-update snapshots and keys outside Git until no longer needed.

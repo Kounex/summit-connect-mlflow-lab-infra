@@ -13,7 +13,7 @@ with `--test`, so instructor rehearsals can leave attendee workspaces clean.
 | Restaurant frontend, backend and synthetic state | OpenShift AI operator/dashboard |
 | LangGraph assistant, MCP service, NeMo guardrails | Operator-managed MLflow server |
 | Jupyter workbench, service accounts, 5 GiB notebook PVC | PostgreSQL metadata, S3 artifacts, image builds |
-| MLflow workspace, experiments, prompt versions and traces | External model API, upstream key and quota |
+| MLflow workspace, experiments, prompt versions and traces | External model providers and their quotas |
 
 ```mermaid
 flowchart LR
@@ -43,6 +43,13 @@ key `api_key`, and call the external model API directly. The final agent
 notebook uses the same endpoint/model Secret and read-only MCP
 service directly. It runs a separate agent; the restaurant's NeMo shield is not
 in that notebook's model path.
+
+The event assignment alternates by username: odd users use `qwen38-27b`,
+even users use `publishers/prelude-maas/models/glm-53-flash`, and `test` uses Qwen.
+The restaurant assistant, NeMo and notebook in each project share that project's
+assigned endpoint/model and key. The providers and keys differ between cohorts;
+this distributes attendees across providers rather than load-balancing each
+request. See [the repeatable model update](INSTALL.md#change-models-on-existing-stacks).
 
 The unused AI asset registration is disabled in the lab. There is no separate
 model discovery entry, local inference deployment or MaaS/Kuadrant gateway in

@@ -386,6 +386,56 @@ instructor guide owns policy/reset instructions and the attendee ConfigMap edits
 For participant deletion or full environment removal, use [TEARDOWN.md](TEARDOWN.md).
 Check [validation coverage and remaining gates](VALIDATION.md) before scaling up.
 
+## Change models on existing stacks
+
+Keep keys in separate private files outside Git. The checked-in
+`config/model-profiles/qwen.yaml` and `glm.yaml` describe the nonsecret model
+settings. Review/edit those endpoints and names for your provider. For the event,
+use **odd users → Qwen, even users → GLM** (25 each); `test` uses Qwen:
+
+```bash
+# Run from the repo root with the target kubeconfig/API guard already set.
+# Requires Python with PyYAML; uv supplies an isolated environment here.
+MODEL_CONCURRENCY=8 uv run --with pyyaml bash scripts/update-model.sh --balanced \
+  /private/path/qwen-api-key /private/path/glm-api-key 1 50
+uv run --with pyyaml bash scripts/update-model.sh --balanced \
+  /private/path/qwen-api-key /private/path/glm-api-key --test
+```
+
+This upgrades existing Helm releases with their current values plus the selected
+model profile. It applies each namespace's model Secret with SSA, preserves the
+live NeMo policy and custom flow files, and changes only its model configuration.
+A credential revision restarts the assistant, NeMo and notebook even for key-only
+rotation. Workbench kernels restart; saved files/PVCs, MLflow history and prompt
+aliases are retained. Helm hooks are skipped because this operation needs no
+prompt seeding, image build or source reset. Readiness waits and a NeMo restaurant
+request complete each participant update. Groups stop on failure.
+
+Do not run another model/apply/render entry concurrently: source/profile caches
+are shared. Do not edit running scripts. The normal `apply-participants.sh`
+installation uses the common site configuration; **rerun this model assignment
+after any normal reapply**, and use this update command during the workshop to
+retain attendee guardrail edits. A new-cluster replay installs the common stack
+first, then applies this assignment before handover.
+
+Helm 3 uses the executable renderer directly. Helm 4 installs the repository's
+small [native postrenderer plugin](../scripts/helpers/model-renderer/plugin.yaml)
+and uses client-side three-way updates for this operation, retaining live edits
+without forcing SSA ownership conflicts. The Secret boundary still uses SSA.
+See [Helm's postrenderer plugin workflow](https://helm.sh/docs/plugins/developer/tutorial-postrenderer-plugin/).
+The entry command requires PyYAML only for parsing/merging model and policy YAML;
+existing installation commands do not acquire that dependency.
+
+For a single profile/range, `MODEL_PROFILE=config/model-profiles/glm.yaml` with
+`update-model.sh /private/path/glm-api-key 2 2` overrides the common site's model
+settings. Omitting `MODEL_PROFILE` uses `config/site-values.yaml`. Keep the same
+profile/key pairing when reapplying a range. Private before-change values, policy
+and Secret snapshots are saved under
+`$HOME/.config/summit-connect-mlflow-lab/model-updates/`; `MODEL_BACKUP_DIR` can
+select another directory outside Git. To roll back a participant, supply its
+previous key and model profile to the same command. Never paste Secret exports
+into the public repository.
+
 ## What belongs in YAML, and what still needs an operation?
 
 Subscriptions/OperatorGroups, the DSC, projects, permissions,
@@ -414,6 +464,7 @@ resources owned by other tools, review the ownership transition before migration
 | `scripts/apply-participants.sh [--dry-run] /absolute/key-file [START END or --test]` | Native project resources plus pinned Helm installation |
 | `scripts/validate.sh [START END or --test]` | Local project/chart rendering checks |
 | `scripts/warm-guardrails.sh [--expect-blocked] START END or --test` | Warm/check baseline or enabled NeMo policy |
+| `scripts/update-model.sh [--balanced] KEY(S) [START END or --test]` | Switch model/credentials on existing stacks, preserving live guardrail policy |
 | `scripts/check-readiness.sh [START END or --test]` | Read-only rollout, native MLflow, baseline and notebook/MCP checks |
 | `scripts/reset-mlflow.sh --destroy-workspace-history userN-or-test /absolute/private-backup-directory` | Export/verify and clear one workspace before project recreation |
 | `scripts/provision-accounts.sh /absolute/private-directory START END or --test` | Create selected existing-Keycloak accounts; `--delete-owned-accounts` cleans them up |
@@ -483,6 +534,10 @@ bash scripts/validate.sh --test
 bash scripts/render-participants.sh 1 1 > /tmp/user1-preview.yaml
 git diff --check
 ```
+
+To include the model-update policy tests, run the unit suite with
+`uv run --with pyyaml python3 -m unittest discover -s tests -v` (or use an
+existing environment with PyYAML).
 
 These commands fetch the pinned public source and render locally. Previewing does
 not read model keys or create resources. `oc` requires a configured context even

@@ -1,0 +1,4 @@
+model:
+  endpoint: https://maas-rhdp.apps.maas.redhatworkshops.io
+  name: qwen38-27b
+  extraBody: true

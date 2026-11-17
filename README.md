@@ -59,8 +59,8 @@ images into another cluster's internal registry.
 
 Participant demo credentials use **`userN:userN`**; the internal account uses
 **`test:test`**. Numeric batches select attendees only; use `--test` explicitly
-for the internal account. The event model assignment is **odd users → Qwen,
-even users → GLM**, with `test` on Qwen. Use the
+for the internal account. Odd users and `test` use the original Qwen key; **user4, user8, …, user48**
+use Qwen with a second key; **user2, user6, …, user50** stay on GLM. Use the
 [model update command](docs/INSTALL.md#change-models-on-existing-stacks) after
 installation to apply that assignment with the matching private keys. Restaurant URLs are public,
 use synthetic data, and the current guardrail integration fails open on errors.

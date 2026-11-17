@@ -390,8 +390,9 @@ Check [validation coverage and remaining gates](VALIDATION.md) before scaling up
 
 Keep keys in separate private files outside Git. The checked-in
 `config/model-profiles/qwen.yaml` and `glm.yaml` describe the nonsecret model
-settings. Review/edit those endpoints and names for your provider. For the event,
-use **odd users → Qwen, even users → GLM** (25 each); `test` uses Qwen:
+settings. Review/edit those endpoints and names for your provider. First apply
+the base assignment: **odd users → Qwen, even users → GLM**; `test` uses Qwen.
+Then apply the rate-limit overlay below for the current event layout:
 
 ```bash
 # Run from the repo root with the target kubeconfig/API guard already set.
@@ -402,18 +403,37 @@ uv run --with pyyaml bash scripts/update-model.sh --balanced \
   /private/path/qwen-api-key /private/path/glm-api-key --test
 ```
 
+The current event splits the original 25 GLM users again: **user4, user8, …,
+user48** use Qwen with a second key; **user2, user6, …, user50** stay on GLM.
+Odd users and `test` keep the original Qwen key. Apply this overlay after the
+base assignment above, using its own private key file:
+
+```bash
+MODEL_CONCURRENCY=8 MODEL_PROFILE=config/model-profiles/qwen.yaml \
+  uv run --with pyyaml bash scripts/update-model.sh /private/path/qwen-overflow-api-key \
+  --users user4 user8 user12 user16 user20 user24 user28 user32 user36 user40 user44 user48
+```
+
+That yields 25 attendees on the original Qwen key, 12 on the second Qwen key,
+and 13 on GLM. `--users` accepts explicit validated participant names, including
+`test`; omitted targets still select the normal roster. Replaying only the base
+assignment would move those 12 back to GLM, so retain both steps for this event.
+
 This upgrades existing Helm releases with their current values plus the selected
 model profile. It applies each namespace's model Secret with SSA, preserves the
 live NeMo policy and custom flow files, and changes only its model configuration.
 A credential revision restarts the assistant, NeMo and notebook even for key-only
 rotation. Workbench kernels restart; saved files/PVCs, MLflow history and prompt
 aliases are retained. Helm hooks are skipped because this operation needs no
-prompt seeding, image build or source reset. Readiness waits and a NeMo restaurant
-request complete each participant update. Groups stop on failure.
+prompt seeding, image build or source reset. Updates are applied to all selected targets in bounded groups before waiting
+for their restarts, so a slow workbench does not postpone other restaurant
+updates. The wait phase checks that native controllers observed the model
+revision, waits for rollouts, verifies the actual workbench revision and warms
+NeMo with a restaurant request. A failed group stops later groups.
 
 Do not run another model/apply/render entry concurrently: source/profile caches
 are shared. Do not edit running scripts. The normal `apply-participants.sh`
-installation uses the common site configuration; **rerun this model assignment
+installation uses the common site configuration; **rerun this model assignment and the rate-limit overlay
 after any normal reapply**, and use this update command during the workshop to
 retain attendee guardrail edits. A new-cluster replay installs the common stack
 first, then applies this assignment before handover.
@@ -464,7 +484,7 @@ resources owned by other tools, review the ownership transition before migration
 | `scripts/apply-participants.sh [--dry-run] /absolute/key-file [START END or --test]` | Native project resources plus pinned Helm installation |
 | `scripts/validate.sh [START END or --test]` | Local project/chart rendering checks |
 | `scripts/warm-guardrails.sh [--expect-blocked] START END or --test` | Warm/check baseline or enabled NeMo policy |
-| `scripts/update-model.sh [--balanced] KEY(S) [START END or --test]` | Switch model/credentials on existing stacks, preserving live guardrail policy |
+| `scripts/update-model.sh [--balanced] KEY(S) [START END, --test or --users NAMES]` | Switch model/credentials on existing stacks, preserving live guardrail policy |
 | `scripts/check-readiness.sh [START END or --test]` | Read-only rollout, native MLflow, baseline and notebook/MCP checks |
 | `scripts/reset-mlflow.sh --destroy-workspace-history userN-or-test /absolute/private-backup-directory` | Export/verify and clear one workspace before project recreation |
 | `scripts/provision-accounts.sh /absolute/private-directory START END or --test` | Create selected existing-Keycloak accounts; `--delete-owned-accounts` cleans them up |

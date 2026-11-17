@@ -2,7 +2,7 @@
 # Helm model/key update on existing stacks; preserve attendees' live guardrail policy.
 set -euo pipefail
 if [[ ${1:-} == --help ]]; then
-  echo "Usage: $0 KEY [START END | --test]"
+  echo "Usage: $0 KEY [START END | --test | --users userN ...]"
   echo "       $0 --balanced QWEN_KEY GLM_KEY [START END | --test]"
   echo 'Keys: absolute private files. Requires Python with PyYAML.'
   echo 'Balanced: odd users Qwen, even users GLM, test Qwen; profiles in config/model-profiles/.'
@@ -18,7 +18,19 @@ if [[ $mode == balanced ]]; then glm_key=${1:?Supply GLM key file}; shift; fi
 [[ $qwen_key == /* && -s $qwen_key && $glm_key == /* && -s $glm_key ]]
 cd -- "$(dirname -- "$0")/.."
 source scripts/helpers/participants.sh
-participant_selection "$@"
+if [[ ${1:-} == --users ]]; then
+  shift
+  [[ $# -gt 0 ]] || { echo 'Supply at least one participant after --users.' >&2; exit 1; }
+  participants=("$@")
+  seen=' '
+  for participant in "${participants[@]}"; do
+    participant_name "$participant"
+    [[ $seen != *" $participant "* ]] || { echo "Duplicate participant: $participant" >&2; exit 1; }
+    seen+="$participant "
+  done
+else
+  participant_selection "$@"
+fi
 source scripts/helpers/check-target.sh
 python3 -c 'import yaml'
 # Helm 3 accepts an executable; Helm 4 uses a native postrenderer plugin.
@@ -57,5 +69,13 @@ update_one() {
   fi
   bash scripts/helpers/update-participant-model.sh "$participant" "$key" ".cache/model-update-$profile.yaml" "$(cat ".cache/model-update-$profile.revision")"
 }
+# Apply every target first, then wait: slow workbench restarts must not delay
+# changing the remaining restaurant assistants during a live event.
 participant_batch "${MODEL_CONCURRENCY:-4}" update_one
+wait_one() {
+  local participant=$1 profile=qwen
+  if [[ $mode == balanced && $participant != test ]] && (( ${participant#user} % 2 == 0 )); then profile=glm; fi
+  bash scripts/helpers/wait-participant-model.sh "$participant" "$(cat ".cache/model-update-$profile.revision")"
+}
+participant_batch "${MODEL_CONCURRENCY:-4}" wait_one
 printf 'Private rollback snapshots: %s\n' "$MODEL_BACKUP_DIR"

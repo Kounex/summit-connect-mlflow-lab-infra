@@ -18,17 +18,5 @@ flags=()
 if [[ $(helm version --short) == v4.* ]]; then flags+=(--server-side=false); fi
 helm upgrade tableschnappi ".cache/chart-$commit" -n "$namespace" \
   "${flags[@]}" --reuse-values -f "$values_file" \
-  --post-renderer "$MODEL_POST_RENDERER" --no-hooks --wait --timeout 10m
-for workload in deployment/tableschnappi-mlflow-proxy deployment/tableschnappi-guardrails "statefulset/$participant"; do
-  oc rollout status "$workload" -n "$namespace" --timeout=600s
-done
-# Warm only a restaurant question: participants may already have an active policy.
-oc exec -i "$participant-0" -c "$participant" -n "$namespace" -- python - <<'PY'
-import os,requests
-response=requests.post(os.environ['GUARDRAILS_URL']+'/v1/chat/completions',json={
- 'model':os.environ['MODEL_NAME'],'messages':[{'role':'user','content':'What is on your menu?'}],
- 'max_tokens':1},timeout=180)
-response.raise_for_status()
-print('NeMo warmup HTTP',response.status_code,flush=True)
-PY
-printf '%s model rollout complete\n' "$participant"
+  --post-renderer "$MODEL_POST_RENDERER" --no-hooks --timeout 10m
+printf '%s model configuration applied\n' "$participant"

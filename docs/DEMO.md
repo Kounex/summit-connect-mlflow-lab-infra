@@ -44,12 +44,19 @@ notebook uses the same endpoint/model Secret and read-only MCP
 service directly. It runs a separate agent; the restaurant's NeMo shield is not
 in that notebook's model path.
 
-The event assignment alternates by username: odd users use `qwen38-27b`,
-even users use `publishers/prelude-maas/models/glm-53-flash`, and `test` uses Qwen.
-The restaurant assistant, NeMo and notebook in each project share that project's
-assigned endpoint/model and key. The providers and keys differ between cohorts;
-this distributes attendees across providers rather than load-balancing each
-request. See [the repeatable model update](INSTALL.md#change-models-on-existing-stacks).
+The current event uses three credential cohorts:
+
+| Users | Model | Credential |
+|---|---|---|
+| Odd users; internal `test` | `qwen38-27b` | Original Qwen key |
+| user4, user8, …, user48 | `qwen38-27b` | Second Qwen key |
+| user2, user6, …, user50 | `publishers/prelude-maas/models/glm-53-flash` | GLM key |
+
+The original GLM cohort was split 13/12 to reduce its load: 25 attendees retain
+the original Qwen key, 12 use the second Qwen key and 13 remain on GLM. The
+restaurant assistant, NeMo and notebook share their namespace's assigned model
+and key. These are participant assignments, rather than per-request routing.
+See [the repeatable model update](INSTALL.md#change-models-on-existing-stacks).
 
 The unused AI asset registration is disabled in the lab. There is no separate
 model discovery entry, local inference deployment or MaaS/Kuadrant gateway in

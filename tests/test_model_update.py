@@ -60,5 +60,26 @@ class ModelUpdateTests(unittest.TestCase):
                          'revision')
 
 
+class NamedTargetTests(unittest.TestCase):
+    def test_named_targets_fail_closed_before_cluster_access(self):
+        import os
+        import subprocess
+        import tempfile
+        root = Path(__file__).resolve().parents[1]
+        env = {key:value for key,value in os.environ.items()
+               if key not in ('KUBECONFIG', 'EXPECTED_API_SERVER')}
+        cases = [([], 'Supply at least one'), (['admin'], 'Expected user1'),
+                 (['user4','user51'], 'Expected user1'),
+                 (['user4','user4'], 'Duplicate participant'),
+                 (['user4','user8'], 'Set a dedicated kubeconfig')]
+        with tempfile.NamedTemporaryFile(mode='w') as key:
+            key.write('test only'); key.flush()
+            for names, expected in cases:
+                result = subprocess.run(['bash', 'scripts/update-model.sh', key.name, '--users', *names],
+                                        cwd=root, env=env, capture_output=True, text=True)
+                self.assertNotEqual(result.returncode, 0, names)
+                self.assertIn(expected, result.stderr, names)
+
+
 if __name__ == '__main__':
     unittest.main()

@@ -168,6 +168,22 @@ checks pass. Private before-change snapshots include release values, guardrail
 configuration and model Secrets. Keys remain outside the public repository.
 See [the repeatable update command](INSTALL.md#change-models-on-existing-stacks).
 
+## GLM rate-limit split — 2026-11-17
+
+The former 25-person GLM cohort was split again: users divisible by four moved
+to `qwen38-27b` with a **second Qwen key**; the remaining even users stayed on
+GLM. The original odd-user Qwen key and internal test stack were unchanged.
+This leaves 25 attendees on the primary Qwen credential, 12 on the second Qwen
+credential and 13 on GLM; `test` additionally uses primary Qwen.
+
+The new key passed a real completion before rollout. The explicit-name update
+used the same Helm/policy-preserving process on only user4, user8, …, user48.
+Updates now apply all selected configurations before the wait phase, so one
+workbench restart does not postpone remaining restaurant model changes. Native
+controller revision checks, rollout waits and NeMo warmup passed for the targets.
+The runbook records the base assignment plus this overlay for replay. Attendee
+policy edits were left intact.
+
 ## Remaining gates
 
 1. Rehearse simultaneous workbench/model/guardrail load across the roster.
